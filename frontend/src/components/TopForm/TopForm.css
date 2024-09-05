@@ -1,0 +1,63 @@
+h1 {
+    /* font-family: 'Anurati-Regular', sans-serif; */
+    color: white;
+    white-space: nowrap;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.name-description-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: center;
+    width: 40%;
+    background-color: #333;
+    margin-top: 2%;
+    border-radius: 10px;
+    border: 2px solid green;
+    padding: 10px 0;
+}
+
+.name-description-container.collapsed{
+    max-height: 70px;
+}
+
+.name-description-container input,
+.name-description-container textarea {
+    width: 80%;
+    padding: 10px; 
+    margin: 10px 0; 
+    border: 1px solid #5e5d5d;
+    border-radius: 5px;
+    background-color: #444; 
+    color: white; 
+}
+
+.name-description-container input::placeholder,
+.name-description-container textarea::placeholder {
+    color: #bbb;
+}
+
+.name-description-container input:focus,
+.name-description-container textarea:focus {
+    outline: none;
+    border-color: green; 
+}
+
+.name-description-container textarea {
+    resize: vertical; 
+    min-height: 100px;
+}
+
+
+@media screen and (max-Width: 1000px) {
+    .name-description-container {
+        width: 95%;
+    }
+}

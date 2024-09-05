@@ -1,0 +1,71 @@
+services:
+
+  # Creates fastapi service (127.0.0.1:8000)
+  backend:
+    build: ./backend
+    command: sh -c "uvicorn main:app --reload --port=8000 --host=0.0.0.0"
+    env_file:
+      - .env
+    ports:
+      - 8000:8000
+    volumes:
+      - ./backend:/app
+    networks:
+      - my_network
+
+  # React frontend service
+  frontend:
+    build: ./frontend
+    command: sh -c "npm start"
+    environment:
+      WATCHPACK_POLLING: 'true'
+    ports:
+      - "3000:3000"
+    # For live updates, this is needed (the user will have to run npm install on their own)
+    volumes:
+      - ./frontend:/app
+    networks:
+      - my_network
+
+  # Creates database instance with given sql data
+  # To get updated data back on local machine docker exec -t <container ID> pg_dump -U <username> -d <database name> > backup.sql                
+  db:
+    image: postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./backend/dockerData.sql:/docker-entrypoint-initdb.d/dockerData.sql
+    networks:
+      - my_network
+
+  # Creates online sql editor (127.0.0.1:5050)
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - my_network
+
+  # This is needed for just running backend stuff with database
+  script-runner:
+    build: ./backend
+    command: sh -c "python backend_testing.py"
+    env_file:
+      - .env
+    networks:
+      - my_network
+    restart: "no"
+
+
+networks:
+  my_network:
+    driver: bridge

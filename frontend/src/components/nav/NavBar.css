@@ -1,0 +1,230 @@
+:root {
+  --nav-color: #212529; /* Background color */
+  --nav-text-color: #a7acb1;
+  --nav-btn-color: #dee2e6;
+  --nav-hover-color: #2c3034;
+  --nav-border-color: #495057;
+}
+
+@font-face {
+  font-family: 'Anurati-Regular';
+  src: url('../../assets/fonts/Anurati-Regular.otf') format('opentype');
+}
+
+/* Top Nav */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--nav-color);
+  padding: 1em;
+}
+
+.navbar-list {
+  width: 100%;
+  list-style: none;
+  align-items: center;
+  display: flex;
+  margin: 0;
+  padding: 0;
+  z-index: 1;
+}
+
+.sidenav {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 60px;  
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: var(--nav-color);
+  border-right: 1px solid var(--nav-border-color);
+  overflow-x: hidden;
+  padding-top: 75px;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.sidenav:not(.active) {
+  white-space: nowrap;
+}
+
+.sidenav.active {
+  width: 200px;
+  transition: width .3s ease, left .3s ease;
+}
+
+.sidenav:hover {
+  width: 200px;
+  transition: width .3s ease, left .3s ease;
+}
+
+.smallbtn {
+  position: absolute;
+  top: 5px;
+  left: 0px;
+  display: none;
+  font-size: 25px;
+  cursor: pointer;
+  background-color: var(--nav-color);
+  border: none;
+  color: var(--nav-btn-color);
+  transition: left .3s ease;
+}
+
+.openbtn {
+  position: absolute;
+  font-size: 25px;
+  cursor: pointer;
+  background-color: var(--nav-color);
+  border: none;
+  color: var(--nav-btn-color);
+  left: 80px;
+  justify-content: center;
+  transition: left .3s ease;
+}
+
+.sidenav:hover + .navbar-list > .openbtn,
+.sidenav.active + .navbar-list > .openbtn {
+  left: 220px;
+}
+
+.navbar-link {
+  color: var(--nav-text-color);
+  background-color: var(--nav-color);
+  border: none;
+  text-decoration: none;
+  position: relative;
+  font-size: 24px;
+  font-family: 'Anurati-Regular', sans-serif;
+}
+
+.navbar-center {
+  display: flex;
+  justify-content: center;
+  flex-grow: 1;
+}
+
+.navbar-item-right {
+  position: relative;
+  margin-right: 2%;
+}
+
+/* .dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: var(--nav-color);
+  margin-top: 15px;
+  min-width: 160px;
+  top: 100%;
+  right: 0;
+}
+
+.dropdown-content a {
+  color: var(--nav-text-color);
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-content a:hover {
+  background-color: var(--nav-hover-color);
+} */
+
+.show {
+  display: block;
+}
+
+.sidenav-link {
+  padding: 8px 8px 8px 25px;
+  text-decoration: none;
+  font-size: 24px;
+  color: var(--nav-text-color);
+  display: block;
+  transition: background-color 0.3s, padding 0.3s, border-radius 0.3s;
+}
+
+.sidenav-link:hover {
+  background-color: var(--nav-hover-color);
+  border-radius: 5px;
+}
+
+.side-nav-show {
+  display: block;
+  padding-left: 8px;
+}
+
+#home {
+  font-size: 40px;
+  padding-right: 5px;
+}
+
+#models {
+  font-size: 30px;
+  padding-right: 5px;
+}
+
+#logout {
+  font-size: 30px;
+  padding-right: 5px;
+}
+
+#football {
+  font-size: 24px;
+  padding-right: 5px;
+}
+
+#golf {
+  font-size: 24px;
+  padding-right: 5px;
+}
+
+#soccer {
+  font-size: 24px;
+  padding-right: 5px;
+}
+
+/* .arrow {
+  position: absolute;
+  border-bottom: 2px solid var(--nav-text-color);
+  border-right: 2px solid var(--nav-text-color);
+  width: 8px;
+  height: 8px;
+  top: 168px;
+  left: 150px;
+  transform: translateY(-50%) rotate(45deg);
+  transition: transform 0.3s ease;
+}
+
+.open {
+  transform: rotate(225deg);
+} */
+
+/* For Smaller screens */
+@media screen and (max-width: 950px) {
+  .navbar-link {font-size: 20px;}
+  .sidenav {width: 150px; display: none;}
+  .sidenav:hover {width: 150px;}
+  .sidenav-link {font-size: 20px;}
+  .sidenav.active {display: block; width: 150px;}
+  .openbtn {  left: 5px; }
+  .sidenav:hover + .navbar-list > .openbtn,
+  .sidenav.active + .navbar-list > .openbtn {
+    display: none;
+  }
+  .smallbtn {display: block;}
+}
+
+/* For Smaller screens */
+@media screen and (max-width: 1080px) {
+  .sidenav {width: 150px; display: none;}
+  .sidenav:hover {width: 150px;}
+  .sidenav-link {font-size: 20px;}
+  .sidenav.active {display: block; width: 150px;}
+  .openbtn {  left: 5px; }
+  .sidenav:hover + .navbar-list > .openbtn,
+  .sidenav.active + .navbar-list > .openbtn {
+    left: 170px;
+  }
+}

@@ -1,0 +1,136 @@
+.model-page-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}
+  
+.stats-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+    margin-top: 2%;
+    margin-bottom: 2%;
+}
+
+.select-button {
+    bottom: 1px;
+    width: 90%;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    background-color: #333;
+    color: white;
+    border: 2px solid #5e5d5d;
+    border-radius: 5px;
+}
+
+.select-button:hover {
+    background-color: #5e5d5d;;
+}
+
+.header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-top-right-radius: 10px;
+    border-top-left-radius: 10px;
+    border-bottom: 1px solid white;
+    width: 100%;
+    color: white;
+    position: relative;
+}
+
+.header.collapsed {
+    border-bottom: none;
+}
+
+.footer {
+    position: relative;
+    width: 100%;
+    bottom: 1px;
+    text-align: center;
+    margin-top: 15px;
+    padding: 10px 0;
+    border-top: 1px solid white;
+}
+
+.footer.collapsed {
+    border-top: none;
+}
+
+h1{
+    /* font-family: 'Anurati-Regular', sans-serif; */
+    color: white;
+    white-space: nowrap;
+}
+
+.loader-back {
+    margin-top: 10%;
+    width: 100px;
+    height: 60px;
+    background-color: #8f2e05; 
+    border-radius: 50%;
+}
+
+.loader {
+    width: 100px;
+    height: 60px;
+    background-image: url('../../../assets/images/football.png');
+    background-size: cover;
+    animation: spin-football .8s infinite linear;
+  }
+  
+  @keyframes spin-football {
+    0% {
+      transform: rotateX(0deg);
+    }
+    100% {
+      transform: rotateX(360deg);
+    }
+  }
+  
+  
+  
+  
+
+
+/* .loader {    
+    --r1: 154%;
+    --r2: 68.5%;
+    margin-top: 10%;
+    width: 60px;
+    aspect-ratio: 1;
+    border-radius: 50%; 
+    background:
+      radial-gradient(var(--r1) var(--r2) at top   ,white 79.5%,#269af2 80%),
+      radial-gradient(var(--r1) var(--r2) at bottom,#269af2 79.5%,white 80%),
+      radial-gradient(var(--r1) var(--r2) at top   ,white 79.5%,#269af2 80%),
+      #ccc;
+    background-size: 50.5% 220%;
+    background-position: -100% 0%,0% 0%,100% 0%;
+    background-repeat:no-repeat;
+    animation: l9 2s infinite linear;
+  }
+  @keyframes l9 {
+      33%  {background-position:    0% 33% ,100% 33% ,200% 33% }
+      66%  {background-position: -100%  66%,0%   66% ,100% 66% }
+      100% {background-position:    0% 100%,100% 100%,200% 100%}
+  } */
+
+
+@media screen and (max-Width: 800px) {
+    .stats-container {
+        flex-direction: column;     
+        align-items: center;
+        margin-bottom: 0%;
+    }
+}
+
+@media screen and (max-Width: 500px) {
+    h1 {
+        font-size: 20px;
+    }
+}
