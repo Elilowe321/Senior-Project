@@ -48,8 +48,8 @@ function NavBar1({children}) {
         {/* Top Nav Bar */}
         <div id='top-nav'>
             <div className='nav-center'>
-                {/* <Link className='title' to="/">C L A I R V O Y A N T</Link> */}
-                <Link className='title' to="/">L O W & P O P L O C K S</Link>
+                <Link className='title' to="/">C L A I R V O Y A N T</Link>
+                {/* <Link className='title' to="/">L O W & P O P L O C K S</Link> */}
 
             </div>
             <button className='outside-button' onClick={toggleSideNav}>
@@ -89,7 +89,8 @@ function NavBar1({children}) {
                     <Link to={`/${user_id}/dashboard`}><span id='home'>&#8962;</span><span id='side-nav-words'>Dashboard</span></Link>
 
                     <Link onClick={toggleModelDropdown}>
-                        <span id='models'>&#9775;</span>
+                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"></link>
+                        <span class="fa" id='models'>&#xf201;</span>
                         <span id='side-nav-words'>Models</span>
                         <span id='side-nav-words' className={`dropdown-arrow ${modelDropdownOpen ? 'open' : ''}`}></span>
                     </Link>

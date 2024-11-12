@@ -541,3 +541,146 @@ def display_past_results(user_id: int, model_id: int, connection=Depends(get_db)
             },
             "weekly_stats": weekly_stats
         }
+
+
+@router.get("/model_accuracy_live")
+def model_accuracy_live(user_id:int, model_id: int, connection=Depends(get_db)):
+    cursor = connection.cursor()
+    cursor.execute(f"""
+        SELECT game_id, prediction, probability, odds
+            FROM game_bets
+            WHERE model_id = %s
+    """, (model_id,))
+
+    predictions = cursor.fetchall()
+
+    finished_games = []
+    correct_predictions = 0
+    total_predictions = len(predictions)
+    
+    # Debug statement: Print initial prediction count
+    print(f"Total predictions in model_accuracy_live: {total_predictions}")
+
+    for game in predictions:
+        game_id, prediction, probability, odds = game
+
+        cursor.execute(f"""
+            SELECT
+                CASE
+                    WHEN home_points > away_points THEN 1
+                    ELSE 0
+                END AS target
+            FROM team_game_stats
+            WHERE game_id = %s
+        """, (game_id,))
+
+        result = cursor.fetchone()
+        
+        if result is not None:
+            target = result[0]
+            finished_games.append({
+                "game_id": game_id,
+                "prediction": prediction,
+                "actual": target,
+                "probability": probability,
+                "odds": odds,
+                "is_correct": prediction == target
+            })
+            if prediction == target:
+                correct_predictions += 1
+
+    cursor.close()
+
+    accuracy = (correct_predictions / total_predictions) * 100 if total_predictions > 0 else 0
+    
+    # Debug statement: Print accuracy calculation details
+    print(f"Correct predictions in model_accuracy_live: {correct_predictions}")
+    print(f"Accuracy in model_accuracy_live: {accuracy}%")
+
+    return {
+        "model_id": model_id,
+        "accuracy": accuracy,
+        "finished_games": finished_games
+    }
+
+
+@router.get("/model_accuracy_live_with_probability")
+def model_accuracy_live_with_probability(user_id: int, model_id: int, min_probability: float = 0, connection=Depends(get_db)):
+    cursor = connection.cursor()
+    cursor.execute("""
+        SELECT game_id, prediction, probability, odds
+        FROM game_bets
+        WHERE model_id = %s
+    """, (model_id,))
+
+    predictions = cursor.fetchall()
+    
+    finished_games = []
+    correct_predictions = 0
+    total_predictions = 0  # Count predictions that meet min_probability threshold
+    pos_predictions = 0 
+    neg_predictions = 0 
+
+
+    # Debug statement: Print total predictions before filtering
+    print(f"Total predictions in model_accuracy_live_with_probability: {len(predictions)}")
+
+    for game in predictions:
+        game_id, prediction, probability, odds = game
+
+        # Check if the probability meets the minimum threshold
+        if probability < min_probability:
+            continue
+
+        # Increment counter for filtered predictions
+        total_predictions += 1
+
+        if(odds > 0 ):
+            pos_predictions += 1
+        else:
+            neg_predictions += 1
+
+
+        cursor.execute("""
+            SELECT
+                CASE
+                    WHEN home_points > away_points THEN 1
+                    ELSE 0
+                END AS target
+            FROM team_game_stats
+            WHERE game_id = %s
+        """, (game_id,))
+
+        result = cursor.fetchone()
+        
+        if result is not None:
+            target = result[0]
+            finished_games.append({
+                "game_id": game_id,
+                "prediction": prediction,
+                "actual": target,
+                "probability": probability,
+                "odds": odds,
+                "is_correct": prediction == target
+            })
+            if prediction == target:
+                correct_predictions += 1
+
+    cursor.close()
+
+    accuracy = (correct_predictions / total_predictions) * 100 if total_predictions > 0 else 0
+    
+    # Debug statements: Print calculation details for filtered predictions
+    print(f"Filtered predictions with min_probability >= {min_probability}: {total_predictions}")
+    print(f"Correct predictions in model_accuracy_live_with_probability: {correct_predictions}")
+    print(f"Accuracy in model_accuracy_live_with_probability: {accuracy}%")
+
+    return {
+        "model_id": model_id,
+        "accuracy": accuracy,
+        "min_probability": f"{min_probability}%",
+        "total_predictions": total_predictions,
+        "positive_predictions": pos_predictions,
+        "negative_predictions": neg_predictions,
+        "finished_games": finished_games,
+    }

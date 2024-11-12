@@ -96,8 +96,8 @@
     border-right: 2px solid #a7acb1;
     width: 8px;
     height: 8px;
-    top: 170px;
-    left: 140px;
+    top: 163px;
+    left: 135px;
     transform: translateY(-50%) rotate(45deg);
     transition: transform 0.3s ease;
   }
@@ -216,7 +216,7 @@ footer {
 }
   
 #models {
-    font-size: 30px;
+    font-size: 20px;
     padding-right: 5px;
 }
 

@@ -1,4 +1,4 @@
-
+'''
 import pandas as pd
 from pprint import pprint
 
@@ -27,7 +27,11 @@ def model_loader(
     df = df.sort_index(axis=1)
 
 
-    print(df.head)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)
+    print(df.iloc[0])
+
+    print(len(df))
 
     # Call different models to compare which is the best
     model = target_provided(
@@ -291,9 +295,82 @@ def model_columns():
 
 from database.database_commands import create_connection
  
-
 connection = create_connection()
 
 model_loader(connection=connection, given_columns=model_columns(), user_id=34, name="Test1", type='classification', target='target', description=None)
+
+connection.close()
+'''
+
+
+
+import cfbd
+from cfbd.rest import ApiException
+from database.database_commands import (
+    create_connection,
+    cfbd_configuration,
+    create_team_talent_table,
+    insert_team_talent_data,
+    create_game_stats_table,
+    insert_game_stats_data,
+    create_betting_lines_table,
+    insert_betting_lines_data,
+)
+from global_vars import Global
+
+'''
+Run weekly before games
+'''
+def get_betting_lines(connection, year, week):
+    # Configure API key authorization
+    configuration = cfbd_configuration()
+
+    # create an instance of the API class
+    api_instance = cfbd.BettingApi(cfbd.ApiClient(configuration))
+
+    try:
+
+        # Create betting table
+        create_betting_lines_table(connection)
+
+        # For each team get all data
+        api_response = api_instance.get_lines(year=year, week=week)
+
+        # TODO:: Sometimes hometeam is different in games table and betting_lines table
+
+        insert_betting_lines_data(connection, api_response)
+
+    except ApiException as e:
+        print("Exception when calling BettingApi->get_lines: %s\n" % e)
+
+
+'''
+Run weekly after games
+'''
+def get_game_stats(connection, year, week):
+    # Configure API key authorization: ApiKeyAuth
+    configuration = cfbd_configuration()
+
+    # create an instance of the API class
+    games_api = cfbd.GamesApi(cfbd.ApiClient(configuration))
+
+    try:
+        # Create the "games" table
+        create_game_stats_table(connection)
+
+        api_response = games_api.get_team_game_stats(
+            year=year, week=week
+        )
+
+        insert_game_stats_data(connection, api_response, year)
+
+    except ApiException as e:
+        print("Exception when calling teams_api->get_fbs_teams: %s\n" % e)
+
+
+connection = create_connection()
+
+get_betting_lines(connection, Global.year, Global.week)
+get_game_stats(connection, Global.year, Global.week-1)
 
 connection.close()
