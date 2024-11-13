@@ -135,6 +135,21 @@ def create_user_model_handler(
     # current_user: dict = Depends(get_current_user),
     connection=Depends(get_db),
 ) -> cfb_models.ReturnModel:
+    
+    cursor = connection.cursor()
+    cursor.execute(
+        f"""
+        SELECT 1 
+        FROM user_models 
+        WHERE user_id = {user_model.user_id} 
+        AND name = '{user_model.name}'
+        """
+    )
+
+    existing_model = cursor.fetchone()
+
+    if existing_model:
+        raise HTTPException(status_code=404, detail="Name already in use")
 
     try:
         # Call the function to create a user model
@@ -156,6 +171,7 @@ def create_user_model_handler(
 
     except:
         return "Failed creating user model"
+
 
 
 # Define route to delete user model
