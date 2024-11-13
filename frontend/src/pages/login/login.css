@@ -38,7 +38,7 @@
 
 
 /* Styles for the error message */
-.login-error {
+.error-message {
     color: white; /* A modern red color for error */
     background-color: #ff5252; /* Light red background */
     padding: 10px;

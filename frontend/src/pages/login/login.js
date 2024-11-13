@@ -125,7 +125,7 @@ const Login = () => {
             <div className={`flip-card ${type === 'register' ? 'flipped' : ''}`}>
                 <div className='flip-card-front'>
                     <TopForm title="Login">
-                        {loginError && <p className="login-error">{loginError}</p>}
+                        {loginError && <p className="error-message">{loginError}</p>}
 
                         <form onSubmit={handleLogin}>
                             <input
@@ -152,7 +152,7 @@ const Login = () => {
 
                 <div className='flip-card-back'>
                 <TopForm title="Register">
-                    {loginError && <p className="login-error">{loginError}</p>}
+                    {loginError && <p className="error-message">{loginError}</p>}
                     <form onSubmit={handleRegister}>
                         <input
                             type="text"
