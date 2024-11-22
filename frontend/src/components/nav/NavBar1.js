@@ -61,8 +61,8 @@ function NavBar1({children}) {
         {/* Top Nav Bar */}
         <div id='top-nav'>
             <div className='nav-center'>
-                {/* <Link className='title' to="/">C L A I R V O Y A N T</Link> */}
-                <Link className='title' to="/">L O W & P O P L O C K S</Link>
+                <Link className='title' to="/">C L A I R V O Y A N T</Link>
+                {/* <Link className='title' to="/">L O W & P O P L O C K S</Link> */}
 
             </div>
             <button className='outside-button' onClick={toggleSideNav}>
@@ -89,7 +89,9 @@ function NavBar1({children}) {
         {/* Side Nav Bar */}
         <div id="side-nav" className={sideNavOpen ? 'active' : ''}>
 
-          <span id='logo'><SiBetterstack /> {sideNavOpen && <span className='logo-title'>Low & Pop Locks</span>} </span>
+          <span id='logo'><SiBetterstack /> {sideNavOpen && <span className='logo-title'>Clairvoyant</span>} </span>
+          {/* <span id='logo'><SiBetterstack /> {sideNavOpen && <span className='logo-title'>Low & Pop Locks</span>} </span> */}
+
           {/* <span id='logo'><img src={require('../../assets/images/lplogo.png')} style={{ height: '40px' }}/> {sideNavOpen && <span className='logo-title'>Low & Pop Locks</span>} </span> */}
 
 

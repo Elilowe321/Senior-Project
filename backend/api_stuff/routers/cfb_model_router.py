@@ -200,12 +200,12 @@ from datetime import datetime
 
 
 @router.get("/test-accuracy")
-def test_accuracy(user_id: int, model_id: int):
+def test_accuracy(user_id: int, model_id: int, min_probability: float=0):
     start_time = datetime.now()
 
     with Pool(processes=6) as pool:
         # args_list = [(user_id, model_id, year, safe_bet) for year in [2022, 2023] for safe_bet in [0, 1, 2]]
-        args_list = [(user_id, model_id, year, safe_bet) for year in [2022, 2023] for safe_bet in [0]]
+        args_list = [(user_id, model_id, year, safe_bet, min_probability) for year in [2022, 2023] for safe_bet in [0]]
 
         results = pool.map(run_model_process, args_list)
 
@@ -216,12 +216,12 @@ def test_accuracy(user_id: int, model_id: int):
     return results
 
 def run_model_process(args):
-    user_id, model_id, year, safe_bet = args
-    result = run_model_on_prev_year(user_id, model_id, year, safe_bet)
+    user_id, model_id, year, safe_bet, min_probability = args
+    result = run_model_on_prev_year(user_id, model_id, year, safe_bet, min_probability)
     return result
 
 
-def run_model_on_prev_year(user_id: int, model_id: int, year: int, safe_bet: int):
+def run_model_on_prev_year(user_id: int, model_id: int, year: int, safe_bet: int, min_probability: float = 0):
 
     connection = create_connection()
     
@@ -240,13 +240,13 @@ def run_model_on_prev_year(user_id: int, model_id: int, year: int, safe_bet: int
         cursor.execute("""
             SELECT COUNT(*)
             FROM test_model_prev_year
-            WHERE user_id = %s AND model_id = %s AND year = %s AND week = %s AND safe_bet = %s
-        """, (user_id, model_id, year, week, safe_bet))
+            WHERE user_id = %s AND model_id = %s AND year = %s AND week = %s AND safe_bet = %s AND min_probability = %s
+        """, (user_id, model_id, year, week, safe_bet, min_probability))
         count = cursor.fetchone()[0]
         cursor.close()
 
         if count > 0:
-            print(f"Skipping year {year}, week {week}, safe_bet {safe_bet} as it already exists in the database")
+            print(f"Skipping year {year}, week {week}, safe_bet {safe_bet}, min_probability {min_probability} as it already exists in the database")
             continue
 
         week_correct_predictions = 0
@@ -282,6 +282,11 @@ def run_model_on_prev_year(user_id: int, model_id: int, year: int, safe_bet: int
 
             if predicted_games_class:
                 for game_id, game_prediction in predicted_games_class.items():
+
+                    if not (min_probability <= game_prediction['random_forest_class_proba']):
+                        continue
+
+
                     cursor = connection.cursor()
                     cursor.execute(f"""
                         SELECT
@@ -373,13 +378,13 @@ def run_model_on_prev_year(user_id: int, model_id: int, year: int, safe_bet: int
                         user_id, model_id, year, week, total_predictions, correct_predictions, money_in, profit, total_out,
                         total_predictions_neg_odds, correct_predictions_neg_odds, money_in_neg_odds, profit_neg_odds, total_out_neg_odds,
                         total_predictions_pos_odds, correct_predictions_pos_odds, money_in_pos_odds, profit_pos_odds, total_out_pos_odds,
-                        safe_bet, time
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        safe_bet, min_probability, time
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     model.user_id, model.model_id, year, week, week_total_predictions, week_correct_predictions, week_money_in, week_profit, week_total_out,
                     week_total_predictions_neg_odds, week_correct_predictions_neg_odds, week_money_in_neg_odds, week_profit_neg_odds, week_total_out_neg_odds,
                     week_total_predictions_pos_odds, week_correct_predictions_pos_odds, week_money_in_pos_odds, week_profit_pos_odds, week_total_out_pos_odds,
-                    safe_bet, datetime.now()
+                    safe_bet, min_probability, datetime.now()
 
                 ))
                 connection.commit()
@@ -395,6 +400,8 @@ def run_model_on_prev_year(user_id: int, model_id: int, year: int, safe_bet: int
         AND model_id = {model_id}
         AND year = {year}
         AND safe_bet = {safe_bet}
+        AND min_probability = {min_probability}
+        
     """)
     rows = cursor.fetchall()
     cursor.close()
@@ -572,7 +579,7 @@ def model_accuracy_live(user_id:int, model_id: int, connection=Depends(get_db)):
 
     finished_games = []
     correct_predictions = 0
-    total_predictions = len(predictions)
+    total_predictions = 0
     
     # Debug statement: Print initial prediction count
     print(f"Total predictions in model_accuracy_live: {total_predictions}")
@@ -593,6 +600,8 @@ def model_accuracy_live(user_id:int, model_id: int, connection=Depends(get_db)):
         result = cursor.fetchone()
         
         if result is not None:
+            total_predictions += 1
+
             target = result[0]
             finished_games.append({
                 "game_id": game_id,
@@ -635,7 +644,9 @@ def model_accuracy_live_with_probability(user_id: int, model_id: int, min_probab
     correct_predictions = 0
     total_predictions = 0  # Count predictions that meet min_probability threshold
     pos_predictions = 0 
+    correct_pos = 0
     neg_predictions = 0 
+    correct_neg = 0
 
 
     # Debug statement: Print total predictions before filtering
@@ -647,15 +658,6 @@ def model_accuracy_live_with_probability(user_id: int, model_id: int, min_probab
         # Check if the probability meets the minimum threshold
         if probability < min_probability:
             continue
-
-        # Increment counter for filtered predictions
-        total_predictions += 1
-
-        if(odds > 0 ):
-            pos_predictions += 1
-        else:
-            neg_predictions += 1
-
 
         cursor.execute("""
             SELECT
@@ -670,6 +672,15 @@ def model_accuracy_live_with_probability(user_id: int, model_id: int, min_probab
         result = cursor.fetchone()
         
         if result is not None:
+
+            # Increment counter for filtered predictions
+            total_predictions += 1
+
+            if(odds > 0 ):
+                pos_predictions += 1
+            else:
+                neg_predictions += 1
+
             target = result[0]
             finished_games.append({
                 "game_id": game_id,
@@ -681,6 +692,10 @@ def model_accuracy_live_with_probability(user_id: int, model_id: int, min_probab
             })
             if prediction == target:
                 correct_predictions += 1
+            if prediction == target and odds > 0:
+                correct_pos += 1
+            if prediction == target and odds < 0:
+                correct_neg += 1
 
     cursor.close()
 
@@ -697,6 +712,8 @@ def model_accuracy_live_with_probability(user_id: int, model_id: int, min_probab
         "min_probability": f"{min_probability}%",
         "total_predictions": total_predictions,
         "positive_predictions": pos_predictions,
+        "correct_pos_predictions": correct_pos,
         "negative_predictions": neg_predictions,
+        "correct_neg_predictions": correct_neg,
         "finished_games": finished_games,
     }

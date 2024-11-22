@@ -135,8 +135,8 @@ function ModelsHome() {
                                         <td colSpan="8">
                                             <div className="dropdown-container">
                                                 <button onClick={() => handleRunModel(model.id, 'upcoming')}>Run on Upcoming Games</button>
-                                                {/* <button onClick={() => handleRunModel(model.id, 'last_year')}>Run on Last Year Games</button>
-                                                <button onClick={() => handleRunModel(model.id, 'live')}>Run on Past Bets</button> */}
+                                                <button onClick={() => handleRunModel(model.id, 'last_year')}>Run on Last Year Games</button>
+                                                <button onClick={() => handleRunModel(model.id, 'live')}>Run on Past Bets</button>
 
                                             </div>
                                         </td>
