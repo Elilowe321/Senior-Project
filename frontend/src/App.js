@@ -69,6 +69,7 @@ import Games from './pages/games/games';
 import ModelsHome from './pages/models/modelsHome/modelsHome';
 import PrivateRoute from './components/auth/PrivateRoute';
 import TestAccuracy from './pages/models/testModel/TestAccuracy';
+import LiveAccuracy from './pages/models/liveAccuracy/liveAccuracy';
 import { AuthProvider } from './components/auth/AuthContext';
 import './App.css';
 import EditModel from './pages/models/editModel/EditModel';
@@ -95,6 +96,11 @@ function App() {
             {/* Test model on last years games */}
             <Route exact path="/:user_id/:model_id/test-accuracy" element={<PrivateRoute />}>
               <Route exact path= "/:user_id/:model_id/test-accuracy" element={<TestAccuracy />} />
+            </Route>
+
+            {/* Test model on the bets a model has made */}
+            <Route exact path="/:user_id/:model_id/live-accuracy" element={<PrivateRoute />}>
+              <Route exact path= "/:user_id/:model_id/live-accuracy" element={<LiveAccuracy />} />
             </Route>
 
             {/* Models Home */}

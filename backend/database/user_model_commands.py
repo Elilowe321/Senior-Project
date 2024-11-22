@@ -300,7 +300,8 @@ def create_test_model_prev_year_table(connection):
                 money_in_pos_odds FLOAT,
                 profit_pos_odds FLOAT,
                 total_out_pos_odds FLOAT,
-                safe_bet INT, 
+                safe_bet INT,
+                min_probability FLOAT,
                 time TIMESTAMP
             )
         """

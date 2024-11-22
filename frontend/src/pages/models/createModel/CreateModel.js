@@ -17,6 +17,7 @@ function CreateModel() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [modelError, setModelError] = useState(''); // State for error message
   const navigate  = useNavigate();
 
 
@@ -100,23 +101,17 @@ function CreateModel() {
   const createUserModel = () => {
     const user_id = localStorage.getItem("user_id");
     const token = localStorage.getItem("authToken");
-    console.log("Target: ", selectedTarget);
 
-    const model_columns = selectedOffensiveColumns.concat(selectedDefensiveColumns); // Combine offensive and defensive columns
-    var type = '';
-    if(selectedTarget === 'target') {
-      type = 'classification';
-    } else {
-      type = 'regression';
-    }
+    const model_columns = [...selectedOffensiveColumns, ...selectedDefensiveColumns];
+    const type = selectedTarget === 'target' ? 'classification' : 'regression';
 
     const data = {
-      user_id: user_id,
-      model_columns: model_columns,
-      name: name,
-      type: type,
+      user_id,
+      model_columns,
+      name,
+      type,
       target: selectedTarget,
-      description: description
+      description
     };
 
     setLoading(true);
@@ -130,34 +125,22 @@ function CreateModel() {
       body: JSON.stringify(data),
     })
       .then(response => {
+        setLoading(false);
         if (!response.ok) {
-          setLoading(false);
+          if (response.status === 404) {
+            setModelError("Name already in use");
+          }
           throw new Error('Network response was not ok');
         }
         return response.json();
       })
       .then(responseData => {
-        setLoading(false);
         navigate(`/${user_id}/models`);
         console.log('User model created:', responseData.id);
-
-        // Fetch data for all combinations
-        // const prev_games = [
-        //   { year: 2022, safe_bet: 0 },
-        //   { year: 2022, safe_bet: 1 },
-        //   { year: 2022, safe_bet: 2 },
-        //   { year: 2023, safe_bet: 0 },
-        //   { year: 2023, safe_bet: 1 },
-        //   { year: 2023, safe_bet: 2 }
-        // ].map(({ year, safe_bet }) =>
-        //   fetch(`/cfb/test-accuracy?user_id=${user_id}&model_id=${responseData.id}&year=${year}&safe_bet=${safe_bet}`, { method: 'GET', headers: { 'Content-Type': 'application/json' } })
-        // );
-
       })
       .catch(error => {
         setLoading(false);
         console.error('Error creating user model:', error);
-        // Handle error here
       });
   };
 
@@ -170,6 +153,7 @@ function CreateModel() {
       ) : (
         <>
           <TopForm title="Model Creator">
+            {modelError && <p className="error-message">{modelError}</p>} {/* Display error */}
             <input
               type="text"
               placeholder="Model Name"

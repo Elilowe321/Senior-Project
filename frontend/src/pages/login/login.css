@@ -37,3 +37,15 @@
 }
 
 
+/* Styles for the error message */
+.error-message {
+    color: white; /* A modern red color for error */
+    background-color: #ff5252; /* Light red background */
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    font-size: 0.9rem; /* Slightly smaller font for a clean look */
+    text-align: center;
+}
+
+

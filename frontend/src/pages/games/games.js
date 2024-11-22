@@ -188,13 +188,12 @@ function Games() {
                 </div>
             ) : (
                 <>
-                    {/* Display Accuracy */}
-                    {modelType === 'classification' && (
+                    {/* {{modelType === 'classification' && (
                         <div className="accuracy-info">
                             <p>Total Correct Predictions: {correctCount}</p>
                             <p>Accuracy: {percentage.toFixed(2)}%</p>
                         </div>
-                    )}
+                    )} */}
     
                     {/* Table Container */}
                     <div id='table-container'>
