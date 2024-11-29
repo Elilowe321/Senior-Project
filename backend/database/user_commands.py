@@ -1,5 +1,6 @@
 import psycopg2
 from model_builders.model_loader import model_loader
+from fastapi import HTTPException
 
 
 # Function to create a user
@@ -30,16 +31,39 @@ def create_user_table(connection):
         print("Error creating 'users' table in PostgreSQL:", e)
 
 
+from fastapi import HTTPException
+
 # Function to insert data into the "user" table
 def insert_user(connection, user_data):
     try:
         cursor = connection.cursor()
 
+        # Check if username is already in use
         cursor.execute(
             """
-        INSERT INTO users (user_name, first_name, last_name, email, hashed_password, paid, earnings)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """,
+            SELECT * FROM users WHERE user_name = %s
+            """, (user_data["user_name"],)
+        )
+        users = cursor.fetchall()
+        if users:
+            raise HTTPException(status_code=400, detail="Username already taken")
+        
+        # Check if email is already in use
+        cursor.execute(
+            """
+            SELECT * FROM users WHERE email = %s
+            """, (user_data["email"],)
+        )
+        emails = cursor.fetchall()
+        if emails:
+            raise HTTPException(status_code=400, detail="Email already in use")
+
+        # Insert new user
+        cursor.execute(
+            """
+            INSERT INTO users (user_name, first_name, last_name, email, hashed_password, paid, earnings)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
             (
                 user_data["user_name"],
                 user_data["first_name"],
@@ -59,6 +83,8 @@ def insert_user(connection, user_data):
     except psycopg2.Error as e:
         connection.rollback()
         print("Error inserting data into PostgreSQL:", e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 
 # Return all users

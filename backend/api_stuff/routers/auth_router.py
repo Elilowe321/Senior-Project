@@ -79,12 +79,19 @@ async def login_for_access_token(
 ):
     
     user = get_user(username=form_data.username, connection=connection)
-    if not user or not verify_password(
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Username Not Found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if user and not verify_password(
         plain_password=form_data.password, hashed_password=user["hashed_password"], pwd_context=pwd_context
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     

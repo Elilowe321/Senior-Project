@@ -28,9 +28,22 @@ ChartJS.register(
 function TestAccuracy() {
   const { user_id, model_id } = useParams();
   const [gameData, setGameData] = useState({});
+  const [minProbability, setMinProbability] = useState(0); // State for minimum probability filter
+  const [submittedProbability, setSubmittedProbability] = useState(0); // Track submitted value
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const token = useMemo(() => localStorage.getItem("authToken"), []);
+
+
+  const handleProbabilityChange = (e) => {
+    setMinProbability(Number(e.target.value)); // Update the input value
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault(); // Prevent page refresh on submit
+    setSubmittedProbability(minProbability); // Set submitted value to trigger data fetch
+  };
 
   useEffect(() => {
     const fetchGameData = async () => {
@@ -39,28 +52,28 @@ function TestAccuracy() {
         setError('user_id or token is null or undefined.');
         return;
       }
-
-      setLoading(true);
-
+  
+      setLoading(true); // Trigger loading state before making the request
+  
       try {
         console.log('Fetching data...');
-
+  
         // Fetch data for all combinations in a single request
-        const response = await fetch(`/cfb/test-accuracy?user_id=${user_id}&model_id=${model_id}`, { 
+        const response = await fetch(`/cfb/test-accuracy?user_id=${user_id}&model_id=${model_id}&min_probability=${submittedProbability}`, { 
           method: 'GET', 
           headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}` 
           } 
         });
-
+  
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-
+  
         const data = await response.json();
         console.log(data);
-
+  
         // Structure data by year and safe_bet
         const structuredData = data.reduce((acc, item) => {
           const { year, safe_bet } = item;
@@ -68,18 +81,18 @@ function TestAccuracy() {
           acc[year][safe_bet] = item;
           return acc;
         }, {});
-
+  
         setGameData(structuredData);
       } catch (error) {
         console.log("Error fetching data:", error);
         setError('Error fetching data');
       } finally {
-        setLoading(false);
+        setLoading(false); // Turn off the loading state when fetching is done
       }
     };
-
+  
     fetchGameData();
-  }, [user_id, model_id, token]);
+  }, [user_id, model_id, token, submittedProbability]); // Include submittedProbability as a dependency
 
 
   const generateChartData = (weeklyStats) => {
@@ -225,7 +238,24 @@ function TestAccuracy() {
   );
 
   return (
+    
     <div className='games-home'>
+      <form onSubmit={handleSubmit}>
+          <div id='probability-filter'>
+            <label htmlFor="minProbability">Min Probability: </label>
+            <input
+              type="number"
+              id="minProbability"
+              value={minProbability}
+              onChange={handleProbabilityChange}
+              min="0"
+              max="100"
+              step="1"
+            />
+            <button type="submit">Submit</button>
+          </div>
+        </form>
+
       {loading ? (
         <div>
           <p>May take up to 3 minutes</p>
@@ -245,7 +275,7 @@ function TestAccuracy() {
                 const { weeklyData, cumulativeData } = generateChartData(data.weekly_stats);
                 return (
                   <div key={`${year}-${safeBet}`}>
-                    {renderTable(data, `${year} Safe Bet ${safeBet}`)}
+                    {renderTable(data, `${year}`)}
                     <div id='chart-only-conatiner'>
                       <div id='chart'>
                         <h2>Weekly Profit</h2>

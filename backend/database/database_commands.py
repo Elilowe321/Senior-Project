@@ -207,196 +207,127 @@ def get_team_average_stats_new(connection, columns, team_id, year, prefix):
     #     return None
 
 
-# Function to create the "game_stats" table
-# TODO::If the model is not the drop >500 will need to change null values in this
-def get_team_average_stats(connection, team_id):
+def get_team_average_stats(connection, columns, team_id, year, week, prefix):
     try:
-    
+        # Construct lists for home and away columns
+        home_columns = [col for col in columns if col.startswith("home_")]
+        away_columns = [col for col in columns if col.startswith("away_")]
+
         cursor = connection.cursor()
 
-        # 35 total (doesnt include id, points, target)
-        cursor.execute(
-            f"""
-                        SELECT 
-                            AVG(rushingattempts),
-                            AVG(rushingyards),
-                            AVG(yardsperpass),
-                            AVG(completionpercentage),
-                            AVG(netpassingyards),
-                            AVG(totalyards),
-                            AVG(fourthdowneff),
-                            AVG(thirddowneff),
-                            AVG(firstdowns),
-                            AVG(rushingtds),
-                            AVG(puntreturnyards),
-                            AVG(puntreturntds),
-                            AVG(puntreturns),
-                            AVG(passingtds),
-                            AVG(kickreturnyards),
-                            AVG(kickreturntds),
-                            AVG(kickreturns),
-                            AVG(kickingpoints),
-                            AVG(interceptionyards),
-                            AVG(interceptiontds),
-                            AVG(passesintercepted),
-                            AVG(fumblesrecovered),
-                            AVG(totalfumbles),
-                            AVG(tacklesforloss),
-                            AVG(defensivetds),
-                            AVG(tackles),
-                            AVG(sacks),
-                            AVG(qbhurries),
-                            AVG(passesdeflected),
-                            AVG(possessiontime),
-                            AVG(interceptions),
-                            AVG(fumbleslost),
-                            AVG(turnovers),
-                            AVG(totalpenaltiesyards),
-                            AVG(yardsperrushattempt)
-                        FROM game_stats gs
-                        JOIN games g ON g.id = gs.game_id
-                        JOIN teams t ON t.id = gs.school_id
-                        WHERE t.id = {team_id}
-                        AND season = {Global.year}
-                        GROUP BY school_id;
+        # Query home and away averages in a single query for each
+        home_avg_query = f"""
+            SELECT {', '.join([f"AVG({col}) AS {prefix}{col.split('_', 1)[1]}" for col in home_columns])}
+            FROM (
+                SELECT 
+                    tgs.*,
+                    COALESCE(home_team.talent, 50) AS home_talent,
+                    COALESCE(away_team.talent, 50) AS away_talent,
+                    g.week
+                FROM 
+                    team_game_stats tgs
+                LEFT JOIN (
+                    SELECT 
+                        t.id, 
+                        tt.talent, 
+                        tt.year
+                    FROM 
+                        team_talent tt
+                    JOIN 
+                        teams t ON t.school = tt.school
+                ) home_team ON (home_team.id = tgs.home_school_id) AND (home_team.year = tgs.year)
+                LEFT JOIN (
+                    SELECT 
+                        t.id, 
+                        tt.talent, 
+                        tt.year
+                    FROM 
+                        team_talent tt
+                    JOIN 
+                        teams t ON t.school = tt.school
+                ) away_team ON (away_team.id = tgs.away_school_id) AND (away_team.year = tgs.year)
+                LEFT JOIN 
+                    games g ON g.id = tgs.game_id
+                WHERE 
+                    tgs.home_school_id = {team_id}
+                    AND tgs.year = {year}
+                    AND g.week < {week}
+            ) subquery;
         """
-        )
+        cursor.execute(home_avg_query)
+        column_names = [desc[0] for desc in cursor.description]
+        home_avgs = cursor.fetchone()
+        home_avg_with_names = dict(zip(column_names, home_avgs))
 
+        away_avg_query = f"""
+            SELECT {', '.join([f"AVG({col}) AS {prefix}{col.split('_', 1)[1]}" for col in away_columns])}
+            FROM (
+                SELECT 
+                    tgs.*,
+                    COALESCE(home_team.talent, 50) AS home_talent,
+                    COALESCE(away_team.talent, 50) AS away_talent,
+                    g.week
+                FROM 
+                    team_game_stats tgs
+                LEFT JOIN (
+                    SELECT 
+                        t.id, 
+                        tt.talent, 
+                        tt.year
+                    FROM 
+                        team_talent tt
+                    JOIN 
+                        teams t ON t.school = tt.school
+                ) home_team ON (home_team.id = tgs.home_school_id) AND (home_team.year = tgs.year)
+                LEFT JOIN (
+                    SELECT 
+                        t.id, 
+                        tt.talent, 
+                        tt.year
+                    FROM 
+                        team_talent tt
+                    JOIN 
+                        teams t ON t.school = tt.school
+                ) away_team ON (away_team.id = tgs.away_school_id) AND (away_team.year = tgs.year)
+                LEFT JOIN 
+                    games g ON g.id = tgs.game_id
+                WHERE 
+                    tgs.away_school_id = {team_id}
+                    AND tgs.year = {year}
+                    AND g.week < {week}
+            ) subquery;
         """
-        SELECT
-            AVG(avg_points) AS overall_avg_points,
-            AVG(avg_rushingAttempts) AS overall_avg_rushingAttempts,
-            AVG(avg_rushingYards) AS overall_avg_rushingYards,
-            AVG(avg_yardsPerPass) AS overall_avg_yardsPerPass,
-            AVG(avg_completionPercentage) AS overall_avg_completionPercentage,
-            AVG(avg_netPassingYards) AS overall_avg_netPassingYards,
-            AVG(avg_totalYards) AS overall_avg_totalYards,
-            AVG(avg_fourthDownEff) AS overall_avg_fourthDownEff,
-            AVG(avg_thirdDownEff) AS overall_avg_thirdDownEff,
-            AVG(avg_firstDowns) AS overall_avg_firstDowns,
-            AVG(avg_rushingTDs) AS overall_avg_rushingTDs,
-            AVG(avg_puntReturnYards) AS overall_avg_puntReturnYards,
-            AVG(avg_puntReturnTDs) AS overall_avg_puntReturnTDs,
-            AVG(avg_puntReturns) AS overall_avg_puntReturns,
-            AVG(avg_passingTDs) AS overall_avg_passingTDs,
-            AVG(avg_kickReturnYards) AS overall_avg_kickReturnYards,
-            AVG(avg_kickReturnTDs) AS overall_avg_kickReturnTDs,
-            AVG(avg_kickReturns) AS overall_avg_kickReturns,
-            AVG(avg_kickingPoints) AS overall_avg_kickingPoints,
-            AVG(avg_interceptionYards) AS overall_avg_interceptionYards,
-            AVG(avg_interceptionTDs) AS overall_avg_interceptionTDs,
-            AVG(avg_passesIntercepted) AS overall_avg_passesIntercepted,
-            AVG(avg_fumblesRecovered) AS overall_avg_fumblesRecovered,
-            AVG(avg_totalFumbles) AS overall_avg_totalFumbles,
-            AVG(avg_tacklesForLoss) AS overall_avg_tacklesForLoss,
-            AVG(avg_defensiveTDs) AS overall_avg_defensiveTDs,
-            AVG(avg_tackles) AS overall_avg_tackles,
-            AVG(avg_sacks) AS overall_avg_sacks,
-            AVG(avg_qbHurries) AS overall_avg_qbHurries,
-            AVG(avg_passesDeflected) AS overall_avg_passesDeflected,
-            AVG(avg_possessionTime) AS overall_avg_possessionTime,
-            AVG(avg_interceptions) AS overall_avg_interceptions,
-            AVG(avg_fumblesLost) AS overall_avg_fumblesLost,
-            AVG(avg_turnovers) AS overall_avg_turnovers,
-            AVG(avg_totalPenaltiesYards) AS overall_avg_totalPenaltiesYards,
-            AVG(avg_yardsPerRushAttempt) AS overall_avg_yardsPerRushAttempt
-        FROM (
+        cursor.execute(away_avg_query)
+        column_names = [desc[0] for desc in cursor.description]
+        away_avgs = cursor.fetchone()
+        away_avg_with_names = dict(zip(column_names, away_avgs))
 
-            SELECT
-                AVG(home_points) AS avg_points,
-                AVG(home_rushingAttempts) AS avg_rushingAttempts,
-                AVG(home_rushingYards) AS avg_rushingYards,
-                AVG(home_yardsPerPass) AS avg_yardsPerPass,
-                AVG(home_completionPercentage) AS avg_completionPercentage,
-                AVG(home_netPassingYards) AS avg_netPassingYards,
-                AVG(home_totalYards) AS avg_totalYards,
-                AVG(home_fourthDownEff) AS avg_fourthDownEff,
-                AVG(home_thirdDownEff) AS avg_thirdDownEff,
-                AVG(home_firstDowns) AS avg_firstDowns,
-                AVG(home_rushingTDs) AS avg_rushingTDs,
-                AVG(home_puntReturnYards) AS avg_puntReturnYards,
-                AVG(home_puntReturnTDs) AS avg_puntReturnTDs,
-                AVG(home_puntReturns) AS avg_puntReturns,
-                AVG(home_passingTDs) AS avg_passingTDs,
-                AVG(home_kickReturnYards) AS avg_kickReturnYards,
-                AVG(home_kickReturnTDs) AS avg_kickReturnTDs,
-                AVG(home_kickReturns) AS avg_kickReturns,
-                AVG(home_kickingPoints) AS avg_kickingPoints,
-                AVG(home_interceptionYards) AS avg_interceptionYards,
-                AVG(home_interceptionTDs) AS avg_interceptionTDs,
-                AVG(home_passesIntercepted) AS avg_passesIntercepted,
-                AVG(home_fumblesRecovered) AS avg_fumblesRecovered,
-                AVG(home_totalFumbles) AS avg_totalFumbles,
-                AVG(home_tacklesForLoss) AS avg_tacklesForLoss,
-                AVG(home_defensiveTDs) AS avg_defensiveTDs,
-                AVG(home_tackles) AS avg_tackles,
-                AVG(home_sacks) AS avg_sacks,
-                AVG(home_qbHurries) AS avg_qbHurries,
-                AVG(home_passesDeflected) AS avg_passesDeflected,
-                AVG(home_possessionTime) AS avg_possessionTime,
-                AVG(home_interceptions) AS avg_interceptions,
-                AVG(home_fumblesLost) AS avg_fumblesLost,
-                AVG(home_turnovers) AS avg_turnovers,
-                AVG(home_totalPenaltiesYards) AS avg_totalPenaltiesYards,
-                AVG(home_yardsPerRushAttempt) AS avg_yardsPerRushAttempt
-            FROM team_game_stats
-            WHERE home_school_id = 57
-            AND year = 2023
+        print("YEAR: ", year, ", Week: ", week)
+        print("TEAM ID: ", team_id)
+        print("Home AVERAGE: ", home_avg_with_names)
+        print("Away AVERAGE: ", away_avg_with_names)
 
-            UNION ALL
+        # Combine home and away averages
+        averages = {}
+        for key in home_avg_with_names:
+            home_value = home_avg_with_names[key]
+            away_value = away_avg_with_names.get(key)
+            if home_value is not None and away_value is not None:
+                averages[key] = (home_value + away_value) / 2
+            elif home_value is not None:
+                averages[key] = home_value
+            elif away_value is not None:
+                averages[key] = away_value
+            elif home_value is None and away_value is None:
+                averages[key] = 0
+    
 
-            SELECT
-                AVG(away_points) AS avg_points,
-                AVG(away_rushingAttempts) AS avg_rushingAttempts,
-                AVG(away_rushingYards) AS avg_rushingYards,
-                AVG(away_yardsPerPass) AS avg_yardsPerPass,
-                AVG(away_completionPercentage) AS avg_completionPercentage,
-                AVG(away_netPassingYards) AS avg_netPassingYards,
-                AVG(away_totalYards) AS avg_totalYards,
-                AVG(away_fourthDownEff) AS avg_fourthDownEff,
-                AVG(away_thirdDownEff) AS avg_thirdDownEff,
-                AVG(away_firstDowns) AS avg_firstDowns,
-                AVG(away_rushingTDs) AS avg_rushingTDs,
-                AVG(away_puntReturnYards) AS avg_puntReturnYards,
-                AVG(away_puntReturnTDs) AS avg_puntReturnTDs,
-                AVG(away_puntReturns) AS avg_puntReturns,
-                AVG(away_passingTDs) AS avg_passingTDs,
-                AVG(away_kickReturnYards) AS avg_kickReturnYards,
-                AVG(away_kickReturnTDs) AS avg_kickReturnTDs,
-                AVG(away_kickReturns) AS avg_kickReturns,
-                AVG(away_kickingPoints) AS avg_kickingPoints,
-                AVG(away_interceptionYards) AS avg_interceptionYards,
-                AVG(away_interceptionTDs) AS avg_interceptionTDs,
-                AVG(away_passesIntercepted) AS avg_passesIntercepted,
-                AVG(away_fumblesRecovered) AS avg_fumblesRecovered,
-                AVG(away_totalFumbles) AS avg_totalFumbles,
-                AVG(away_tacklesForLoss) AS avg_tacklesForLoss,
-                AVG(away_defensiveTDs) AS avg_defensiveTDs,
-                AVG(away_tackles) AS avg_tackles,
-                AVG(away_sacks) AS avg_sacks,
-                AVG(away_qbHurries) AS avg_qbHurries,
-                AVG(away_passesDeflected) AS avg_passesDeflected,
-                AVG(away_possessionTime) AS avg_possessionTime,
-                AVG(away_interceptions) AS avg_interceptions,
-                AVG(away_fumblesLost) AS avg_fumblesLost,
-                AVG(away_turnovers) AS avg_turnovers,
-                AVG(away_totalPenaltiesYards) AS avg_totalPenaltiesYards,
-                AVG(away_yardsPerRushAttempt) AS avg_yardsPerRushAttempt
-            FROM team_game_stats
-            WHERE away_school_id = 57
-            AND year = 2023
-        ) combined_stats;"""
+        return averages
 
-        rows = cursor.fetchall()
-        connection.commit()
-        cursor.close()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
-        return rows
-
-    except psycopg2.Error as e:
-        connection.rollback()
-
-        print("Error creating 'game_stats' table in PostgreSQL:", e)
 
 
 def game_lines(connection, game_id):
