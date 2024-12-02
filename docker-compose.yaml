@@ -28,7 +28,7 @@ services:
       - my_network
 
   # Creates database instance with given sql data
-  # To get updated data back on local machine docker exec -t <container ID> pg_dump -U <username> -d <database name> > backup.sql                
+  # To get updated data back on local machine docker exec -t <container ID> pg_dump -U <username> -d <database name> > backend/dockerData.sql                
   db:
     image: postgres
     environment:
