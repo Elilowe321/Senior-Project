@@ -711,6 +711,7 @@ def model_accuracy_live_with_probability(user_id: int, model_id: int, min_probab
         "accuracy": accuracy,
         "min_probability": f"{min_probability}%",
         "total_predictions": total_predictions,
+        "correct_predictions": correct_predictions,
         "positive_predictions": pos_predictions,
         "correct_pos_predictions": correct_pos,
         "negative_predictions": neg_predictions,

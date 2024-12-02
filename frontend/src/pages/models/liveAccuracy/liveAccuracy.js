@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import '../../games/games.css';
+import TopForm from '../../../components/TopForm/TopForm'; 
 import '../../../assets/styles/tables.css'
 import {
   Chart as ChartJS,
@@ -83,10 +84,13 @@ function LiveAccuracy() {
   return (
     <div id='table-container'>
       <div id='table-header'>
-        <h1 id='table-title'>PREVIOUS BETS</h1>
+       
+       
+        <h1 id='table-title'>Accuracy On Previous Bets</h1>
         <form onSubmit={handleSubmit}>
           <div id='probability-filter'>
-            <label htmlFor="minProbability">Min Probability: </label>
+            Select a min probability for chosen bets
+            <label htmlFor="minProbability"></label>
             <input
               type="number"
               id="minProbability"
@@ -99,30 +103,31 @@ function LiveAccuracy() {
             <button type="submit">Submit</button>
           </div>
         </form>
+
       </div>
 
       <table id='table'>
         <thead>
           <tr>
-            <th>Game ID</th>
-            <th>Prediction</th>
-            <th>Actual</th>
-            <th>Probability</th>
-            <th>Odds</th>
-            <th>Correct</th>
+            <th>Accuracy</th>
+            <th>Total Predictions</th>
+            <th>Correct Predictions</th>
+            <th>Positive Predictions</th>
+            <th>Correct Positive Predictions</th>
+            <th>Negative Predictions</th>
+            <th>Correct Negative Predictions</th>
           </tr>
         </thead>
         <tbody>
-          {gameData.finished_games.map((game) => (
-            <tr key={game.game_id} className={game.is_correct ? 'correct-row' : 'incorrect-row'}>
-              <td>{game.game_id}</td>
-              <td>{game.prediction}</td>
-              <td>{game.actual}</td>
-              <td>{(game.probability).toFixed(2)}%</td>
-              <td>{game.odds}</td>
-              <td>{game.is_correct ? 'Yes' : 'No'}</td>
-            </tr>
-          ))}
+          <tr>
+            <td>{gameData.accuracy}%</td>
+            <td>{gameData.total_predictions}</td>
+            <td>{gameData.correct_predictions}</td>
+            <td>{gameData.positive_predictions}</td>
+            <td>{gameData.correct_pos_predictions}</td>
+            <td>{gameData.negative_predictions}</td>
+            <td>{gameData.correct_neg_predictions}</td>
+          </tr>
         </tbody>
       </table>
     </div>

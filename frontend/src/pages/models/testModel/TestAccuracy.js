@@ -240,22 +240,6 @@ function TestAccuracy() {
   return (
     
     <div className='games-home'>
-      <form onSubmit={handleSubmit}>
-          <div id='probability-filter'>
-            <label htmlFor="minProbability">Min Probability: </label>
-            <input
-              type="number"
-              id="minProbability"
-              value={minProbability}
-              onChange={handleProbabilityChange}
-              min="0"
-              max="100"
-              step="1"
-            />
-            <button type="submit">Submit</button>
-          </div>
-        </form>
-
       {loading ? (
         <div>
           <p>May take up to 3 minutes</p>
@@ -269,6 +253,23 @@ function TestAccuracy() {
         </div>
       ) : Object.keys(gameData).length > 0 ? (
         <>
+
+          <form onSubmit={handleSubmit}>
+            <div id='probability-filter'>
+              Select a min probability for chosen bets
+              <label htmlFor="minProbability"> </label>
+              <input
+                type="number"
+                id="minProbability"
+                value={minProbability}
+                onChange={handleProbabilityChange}
+                min="0"
+                max="100"
+                step="1"
+              />
+              <button type="submit">Submit</button>
+            </div>
+          </form>
           <div id='tables-charts-container'>
             {Object.entries(gameData).map(([year, safeBets]) => (
               Object.entries(safeBets).map(([safeBet, data]) => {

@@ -24,6 +24,9 @@
   background-color: #212529;
 }
 
+
+
+
 /* Optional: Responsive design */
 @media (max-width: 768px) {
   #chart {
