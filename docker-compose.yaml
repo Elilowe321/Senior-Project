@@ -24,10 +24,12 @@ services:
     # For live updates, this is needed (the user will have to run npm install on their own)
     volumes:
       - ./frontend:/app
+      - /app/node_modules
     networks:
       - my_network
 
   # Creates database instance with given sql data
+  # sql data must be UTF8 incoded
   # To get updated data back on local machine docker exec -t <container ID> pg_dump -U <username> -d <database name> > backend/dockerData.sql                
   db:
     image: postgres
