@@ -1,5 +1,5 @@
 # Final Project
-Web app that predicts the outcome of college football games
+Clairvoyant is a web app that allows the users to control everything about a machine learning model.
 
 ## Description of scripts
 # create_teams_table.py:
