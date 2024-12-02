@@ -40,17 +40,17 @@ Web app that predicts the outcome of college football games
 | DB_PORT | db port |
 
 ## Run Program
-1. Set up .env with appropriate variables
+1. Set up .env with appropriate variables in root folder (PGADMIN="..")
 2. Run: 
 ```sh
-docker compose up --build
+docker compose up -d
 ```
 or 
 
 ```sh
-docker compose up -d
+docker compose up --build
 ```
-
-3. For API: Go to 127.0.0.1:8000/docs
-4. For SQL Editor: Go to 127.0.0.1/5050
+3. For Frontend: Go to localhost:3000
+4. For API: Go to 127.0.0.1:8000/docs
+5. For SQL Editor: Go to 127.0.0.1/5050
 
