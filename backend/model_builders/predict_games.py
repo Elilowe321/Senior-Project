@@ -62,20 +62,20 @@ def predict_games(
             game_id, home_id, home_team, away_id, away_team = row
 
             # Get average stats for the teams in each game
-            # home_average_stats = get_team_average_stats_new(
-            #     connection, chosen_columns, home_id, year, "home_"
-            # )
-            # away_average_stats = get_team_average_stats_new(
-            #     connection, chosen_columns, away_id, year, "away_"
-            # )
+            home_average_stats = get_team_average_stats_new(
+                connection, chosen_columns, home_id, year, "home_"
+            )
+            away_average_stats = get_team_average_stats_new(
+                connection, chosen_columns, away_id, year, "away_"
+            )
 
 
-            home_average_stats = get_team_average_stats(
-                connection, chosen_columns, home_id, year, week, "home_"
-            )
-            away_average_stats = get_team_average_stats(
-                connection, chosen_columns, away_id, year, week, "away_"
-            )
+            # home_average_stats = get_team_average_stats(
+            #     connection, chosen_columns, home_id, year, week, "home_"
+            # )
+            # away_average_stats = get_team_average_stats(
+            #     connection, chosen_columns, away_id, year, week, "away_"
+            # )
 
             # If its the first week, get last years stats on everything besides team talent
             if 'home_talent' in chosen_columns and week == 1:
