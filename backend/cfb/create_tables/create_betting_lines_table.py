@@ -3,12 +3,12 @@ import time
 import cfbd
 from cfbd.rest import ApiException
 from pprint import pprint
-from database.database_commands import (
+from ..database.database_commands import (
     cfbd_configuration,
     create_connection,
     create_betting_lines_table,
     insert_betting_lines_data,
-)
+) 
 
 
 def get_betting_lines(connection, year, week):

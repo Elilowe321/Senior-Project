@@ -1,13 +1,13 @@
-from database.database_commands import create_connection, create_game_bets_table, insert_game_bets
+from cfb.database.database_commands import create_connection, create_game_bets_table, insert_game_bets
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordBearer
 from ..routers.cfb_model_router import get_user_specific_model_handler
-from model_builders.predict_games import predict_games
-from create_tables.create_betting_lines_table import get_betting_lines
+from model_builders.cfb_model_loader import predict_games
+from cfb.create_tables.create_betting_lines_table import get_betting_lines
 from global_vars import Global
-from database.user_model_commands import create_test_model_prev_year_table
+from cfb.database.user_model_commands import create_test_model_prev_year_table
 
-router = APIRouter()
+router = APIRouter() 
 
 
 # Database connection

@@ -1,9 +1,8 @@
 import psycopg2
-from model_builders.model_loader import model_loader
 from fastapi import HTTPException
 
 
-# Function to create a user
+# Function to create a user 
 def create_user_table(connection):
     try:
         cursor = connection.cursor()
@@ -30,8 +29,6 @@ def create_user_table(connection):
 
         print("Error creating 'users' table in PostgreSQL:", e)
 
-
-from fastapi import HTTPException
 
 # Function to insert data into the "user" table
 def insert_user(connection, user_data):
