@@ -306,6 +306,7 @@ connection.close()
 
 import cfbd
 from cfbd.rest import ApiException
+from pprint import pprint
 from database.database_commands import (
     create_connection,
     cfbd_configuration,
@@ -315,6 +316,8 @@ from database.database_commands import (
     insert_game_stats_data,
     create_betting_lines_table,
     insert_betting_lines_data,
+    create_games_table,
+    insert_games_data
 )
 from global_vars import Global
 
@@ -368,9 +371,53 @@ def get_game_stats(connection, year, week):
         print("Exception when calling teams_api->get_fbs_teams: %s\n" % e)
 
 
+def get_games(connection, year):
+
+    # Configure API key authorization
+    configuration = cfbd_configuration()
+
+    # Create an instance of the API class
+    games_api = cfbd.GamesApi(cfbd.ApiClient(configuration))
+
+    try:
+        # Create the "games" table
+        create_games_table(connection)
+
+        # Get games data from the API
+        api_response = games_api.get_games(year=year, season_type='postseason')
+
+        pprint(api_response)
+
+        # Insert data into the "games" table
+        insert_games_data(connection, api_response)
+
+    except ApiException as e:
+        print("Exception when calling teams_api->get_teams: %s\n" % e)
+
+
+def get_team_overall_stats(connection, year):
+    
+     # Configure API key authorization
+    configuration = cfbd_configuration()
+
+    # Create an instance of the API class
+    stats = cfbd.StatsApi(cfbd.ApiClient(configuration))
+
+    try:
+        # Advanced team metrics by season
+        api_response = stats.get_team_season_stats(year=year, team='Florida', start_week=1, end_week=10)
+        # api_response = api_instance.get_team_season_stats(year=year, team=team, conference=conference, start_week=start_week, end_week=end_week)
+
+        pprint(api_response)
+    except ApiException as e:
+        print("Exception when calling StatsApi->get_advanced_team_season_stats: %s\n" % e)
+
+
 connection = create_connection()
 
-get_betting_lines(connection, Global.year, Global.week)
-get_game_stats(connection, Global.year, Global.week-1)
+# get_games(connection, Global.year)
+get_team_overall_stats(connection, Global.year)
+# get_betting_lines(connection, Global.year, Global.week)
+# get_game_stats(connection, Global.year, Global.week-1)
 
 connection.close()

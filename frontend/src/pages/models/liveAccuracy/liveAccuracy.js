@@ -1,40 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Line } from 'react-chartjs-2';
 import { useParams } from 'react-router-dom';
 import '../../games/games.css';
-import TopForm from '../../../components/TopForm/TopForm'; 
-import '../../../assets/styles/tables.css'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 function LiveAccuracy() {
   const { user_id, model_id } = useParams();
-  const [gameData, setGameData] = useState(null);
+  const [chartData, setChartData] = useState(null);
+  const [tableData, setTableData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [minProbability, setMinProbability] = useState(0); // State for minimum probability filter
-  const [submittedProbability, setSubmittedProbability] = useState(0); // Track submitted value
-  const token = useMemo(() => localStorage.getItem("authToken"), []);
+  const [minProbability, setMinProbability] = useState(50); // Start at 50
+  const token = localStorage.getItem("authToken");
 
   useEffect(() => {
-    const fetchGameData = async () => {
+    const fetchChartData = async () => {
       if (!user_id || !token) {
         setLoading(false);
         setError('user_id or token is missing.');
@@ -42,22 +21,45 @@ function LiveAccuracy() {
       }
 
       setLoading(true);
+      const probabilities = Array.from({ length: 51 }, (_, i) => 50 + i); // [50, 51, ..., 100]
+      const results = [];
 
       try {
-        const response = await fetch(`/cfb/model_accuracy_live_with_probability?user_id=${user_id}&model_id=${model_id}&min_probability=${submittedProbability}`, { 
-          method: 'GET', 
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        for (const min_probability of probabilities) {
+          const response = await fetch(`/cfb/model_accuracy_live_with_probability?user_id=${user_id}&model_id=${model_id}&min_probability=${min_probability}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          });
 
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+
+          const data = await response.json();
+          results.push({ probability: min_probability, accuracy: data.accuracy });
+          if (min_probability === minProbability) {
+            setTableData(data); // Update table data for selected probability
+          }
         }
 
-        const data = await response.json();
-        setGameData(data);
+        // Prepare chart data
+        const labels = results.map(item => `${item.probability}%`);
+        const data = results.map(item => item.accuracy);
+
+        setChartData({
+          labels,
+          datasets: [
+            {
+              label: 'Accuracy (%)',
+              data,
+              borderColor: 'rgba(75,192,192,1)',
+              backgroundColor: 'rgba(75,192,192,0.2)',
+            },
+          ],
+        });
       } catch (error) {
         setError(error.message);
       } finally {
@@ -65,71 +67,70 @@ function LiveAccuracy() {
       }
     };
 
-    fetchGameData();
-  }, [user_id, model_id, token, submittedProbability]); // Add submittedProbability to dependency array
+    fetchChartData();
+  }, [user_id, model_id, token, minProbability]);
 
   const handleProbabilityChange = (e) => {
-    setMinProbability(Number(e.target.value)); // Update the input value
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent page refresh on submit
-    setSubmittedProbability(minProbability); // Set submitted value to trigger data fetch
+    setMinProbability(Number(e.target.value));
   };
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
-  if (!gameData) return <p>No data available</p>;
 
   return (
-    <div id='table-container'>
-      <div id='table-header'>
-       
-       
-        <h1 id='table-title'>Accuracy On Previous Bets</h1>
-        <form onSubmit={handleSubmit}>
-          <div id='probability-filter'>
-            Select a min probability for chosen bets
-            <label htmlFor="minProbability"></label>
+    <div id="live-accuracy-container">
+      
+      <div id="table-container">
+        <div id="table-header">
+          <h2>Details for {minProbability}% Probability</h2>
+          <div id="probability-filter">
+            <label htmlFor="minProbability">Select Min Probability: </label>
             <input
               type="number"
               id="minProbability"
               value={minProbability}
               onChange={handleProbabilityChange}
-              min="0"
+              min="50"
               max="100"
               step="1"
             />
-            <button type="submit">Submit</button>
           </div>
-        </form>
+        </div>
 
+        {tableData && (
+          <table id="table">
+            <thead>
+              <tr>
+                <th>Accuracy</th>
+                <th>Total Predictions</th>
+                <th>Correct Predictions</th>
+                <th>Positive Predictions</th>
+                <th>Correct Positive Predictions</th>
+                <th>Negative Predictions</th>
+                <th>Correct Negative Predictions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{tableData.accuracy}%</td>
+                <td>{tableData.total_predictions}</td>
+                <td>{tableData.correct_predictions}</td>
+                <td>{tableData.positive_predictions}</td>
+                <td>{tableData.correct_pos_predictions}</td>
+                <td>{tableData.negative_predictions}</td>
+                <td>{tableData.correct_neg_predictions}</td>
+              </tr>
+            </tbody>
+          </table>
+        )}
       </div>
 
-      <table id='table'>
-        <thead>
-          <tr>
-            <th>Accuracy</th>
-            <th>Total Predictions</th>
-            <th>Correct Predictions</th>
-            <th>Positive Predictions</th>
-            <th>Correct Positive Predictions</th>
-            <th>Negative Predictions</th>
-            <th>Correct Negative Predictions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{gameData.accuracy}%</td>
-            <td>{gameData.total_predictions}</td>
-            <td>{gameData.correct_predictions}</td>
-            <td>{gameData.positive_predictions}</td>
-            <td>{gameData.correct_pos_predictions}</td>
-            <td>{gameData.negative_predictions}</td>
-            <td>{gameData.correct_neg_predictions}</td>
-          </tr>
-        </tbody>
-      </table>
+      <h1>Live Accuracy Chart and Table</h1>
+      <div id="chart-container">
+        {chartData && <Line data={chartData} />}
+      </div>
+
+      
     </div>
   );
 }

@@ -90,9 +90,7 @@ function NavBar1({children}) {
         <div id="side-nav" className={sideNavOpen ? 'active' : ''}>
 
           <span id='logo'><SiBetterstack /> {sideNavOpen && <span className='logo-title'>Clairvoyant</span>} </span>
-          {/* <span id='logo'><SiBetterstack /> {sideNavOpen && <span className='logo-title'>Low & Pop Locks</span>} </span> */}
 
-          {/* <span id='logo'><img src={require('../../assets/images/lplogo.png')} style={{ height: '40px' }}/> {sideNavOpen && <span className='logo-title'>Low & Pop Locks</span>} </span> */}
 
 
             {/* Button to keep side nav open */}
