@@ -1,12 +1,12 @@
 import time
-from database.database_commands import create_connection
+from cfb.database.database_commands import create_connection
 from ..pydantic_models import cfb_models
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from fastapi.security import OAuth2PasswordBearer
 from ..routers.auth_router import get_current_user
-
-from database.user_model_commands import (
+ 
+from cfb.database.user_model_commands import (
     get_user_models,
     get_specific_user_model,
     create_user_model,
@@ -190,9 +190,9 @@ def delete_user_model_handler(
         raise HTTPException(status_code=500, detail="Failed deleting model")
 
 
-from create_tables.create_betting_lines_table import get_betting_lines
-from database.user_model_commands import create_test_model_prev_year_table
-from model_builders.predict_games import predict_games
+from cfb.create_tables.create_betting_lines_table import get_betting_lines
+from cfb.database.user_model_commands import create_test_model_prev_year_table
+from model_builders.cfb_model_loader import predict_games
 from datetime import datetime  # Import datetime if you're using TIMESTAMP
 
 from multiprocessing import Pool

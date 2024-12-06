@@ -1,5 +1,5 @@
 import psycopg2
-from model_builders.model_loader import model_loader
+from model_builders.cfb_model_loader import model_loader
 import json
 from psycopg2 import sql
 

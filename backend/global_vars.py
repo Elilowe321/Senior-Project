@@ -1,3 +1,3 @@
 class Global:
     year = 2024
-    week = 15
+    week = 14

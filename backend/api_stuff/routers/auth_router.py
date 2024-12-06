@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import timedelta
 from passlib.context import CryptContext
-from database.database_commands import create_connection
-from database.user_commands import create_user_table, insert_user
+from cfb.database.database_commands import create_connection
+from cfb.database.user_commands import create_user_table, insert_user
 from ..pydantic_models.users import (
     get_user,
     verify_password,
