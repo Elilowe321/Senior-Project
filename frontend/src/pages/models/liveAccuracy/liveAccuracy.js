@@ -9,7 +9,8 @@ function LiveAccuracy() {
   const [tableData, setTableData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [minProbability, setMinProbability] = useState(50); // Start at 50
+  const [minProbability, setMinProbability] = useState(50); // Input field value
+  const [submittedProbability, setSubmittedProbability] = useState(50); // Submitted value
   const token = localStorage.getItem("authToken");
 
   useEffect(() => {
@@ -40,7 +41,7 @@ function LiveAccuracy() {
 
           const data = await response.json();
           results.push({ probability: min_probability, accuracy: data.accuracy });
-          if (min_probability === minProbability) {
+          if (min_probability === submittedProbability) {
             setTableData(data); // Update table data for selected probability
           }
         }
@@ -68,10 +69,15 @@ function LiveAccuracy() {
     };
 
     fetchChartData();
-  }, [user_id, model_id, token, minProbability]);
+  }, [user_id, model_id, token, submittedProbability]);
 
   const handleProbabilityChange = (e) => {
     setMinProbability(Number(e.target.value));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSubmittedProbability(minProbability);
   };
 
   if (loading) return <p>Loading...</p>;
@@ -79,11 +85,12 @@ function LiveAccuracy() {
 
   return (
     <div id="live-accuracy-container">
-      
+      <h1>Live Accuracy Chart and Table</h1>
+
       <div id="table-container">
         <div id="table-header">
-          <h2>Details for {minProbability}% Probability</h2>
-          <div id="probability-filter">
+          <h2>Details for {submittedProbability}% Probability</h2>
+          <form id="probability-filter" onSubmit={handleSubmit}>
             <label htmlFor="minProbability">Select Min Probability: </label>
             <input
               type="number"
@@ -94,7 +101,8 @@ function LiveAccuracy() {
               max="100"
               step="1"
             />
-          </div>
+            <button type="submit">Submit</button>
+          </form>
         </div>
 
         {tableData && (
@@ -125,12 +133,9 @@ function LiveAccuracy() {
         )}
       </div>
 
-      <h1>Live Accuracy Chart and Table</h1>
       <div id="chart-container">
         {chartData && <Line data={chartData} />}
       </div>
-
-      
     </div>
   );
 }

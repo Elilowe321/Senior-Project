@@ -307,7 +307,7 @@ connection.close()
 import cfbd
 from cfbd.rest import ApiException
 from pprint import pprint
-from database.database_commands import (
+from cfb.database.database_commands import (
     create_connection,
     cfbd_configuration,
     create_team_talent_table,
@@ -415,9 +415,11 @@ def get_team_overall_stats(connection, year):
 
 connection = create_connection()
 
-# get_games(connection, Global.year)
-get_team_overall_stats(connection, Global.year)
-# get_betting_lines(connection, Global.year, Global.week)
-# get_game_stats(connection, Global.year, Global.week-1)
+get_games(connection, Global.year)
+get_betting_lines(connection, Global.year, Global.week)
+get_game_stats(connection, Global.year, Global.week-1)
+
+# get_team_overall_stats(connection, Global.year)
+
 
 connection.close()
