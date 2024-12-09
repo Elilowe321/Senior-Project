@@ -46,6 +46,7 @@ def model_predicted_games(user_id: int, model_id: int, connection=Depends(get_db
             week=Global.week,
             type=model.type,
             target=model.target,
+            season_type=Global.season_type,
             chosen_columns=model.columns,
             class_file_path=class_filepath,
         )
@@ -68,6 +69,7 @@ def model_predicted_games(user_id: int, model_id: int, connection=Depends(get_db
             week=Global.week,
             type=model.type,
             target=model.target,
+            season_type=Global.season_type,
             chosen_columns=model.columns,
             reg_file_path=reg_filepath,
         )

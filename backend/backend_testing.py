@@ -1,18 +1,15 @@
-'''
+
+
 import pandas as pd
 from pprint import pprint
-
-from sklearn.metrics import (
-    accuracy_score,
-    mean_squared_error,
-)
-
-from sklearn.ensemble import (
-    RandomForestClassifier,
-    GradientBoostingRegressor,
-)
-from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import RFECV
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingRegressor, RandomForestRegressor
+from sklearn.metrics import accuracy_score, mean_squared_error, f1_score, r2_score
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from joblib import dump
+
 
 
 def model_loader(
@@ -26,13 +23,6 @@ def model_loader(
     df = pd.DataFrame(rows, columns=given_columns)
     df = df.sort_index(axis=1)
 
-
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None)
-    print(df.iloc[0])
-
-    print(len(df))
-
     # Call different models to compare which is the best
     model = target_provided(
         user_id=user_id,
@@ -44,7 +34,6 @@ def model_loader(
     )
 
     return model
-
 
 
 # Returns the stats for given columns
@@ -146,164 +135,175 @@ def get_column_stats(connection, columns):
         return None
 
 
+
 def target_provided(user_id, name, df, type, target, description=None):
+    """Automatically optimize and train the best model with feature selection."""
+    df = df.dropna()
+    X = df.drop(columns=[target])
+    y = df[target]
+
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     if type == "classification":
-        print("Creating Classification Model")
-
-        # Drop na columns if > 200 and other rows
-        # df = df.dropna(thresh=len(df) - 500, axis=1)
-        df = df.dropna()
-
-        x_model_name = df.drop([target], axis=1)  # TODO:: Fix home and away points
-        y_model_name = df[target]  # Target variable: win
-
-        # Split data into training and testing sets for classification and regression
-        X_train_class, X_test_class, y_train_class, y_test_class = train_test_split(
-            x_model_name, y_model_name, test_size=0.2, random_state=42
-        )
-
-        # Create models
-        classification_model = RandomForestClassifier(n_estimators=100)
-
-        # Fit models
-        classification_model.fit(X_train_class, y_train_class)
-
-        # Model Evaluation
-        y_pred_class = classification_model.predict(X_test_class)
-
-        # Check Accuracy
-        classification_accuracy = accuracy_score(y_test_class, y_pred_class)
-        print("Classification Accuracy: ", classification_accuracy)
-
-        # Save models
-        class_file_name = f"models/{user_id}_class_{name}.joblib"
-        dump(classification_model, filename=class_file_name)
-
-        mse_home = None
-        mse_away = None
-        reg_file_name = None
-
-        # Return Model
-        # df = df.drop([target], axis=1)
-        stats = {
-            "classification_accuracy": round(classification_accuracy, 2),
-            "mse_home": mse_home,
-            "mse_away": mse_away,
+        print("Optimizing Classification Model...")
+        
+        # Initialize models to compare
+        models = {
+            "RandomForest": RandomForestClassifier(random_state=42),
+            "LogisticRegression": LogisticRegression(max_iter=1000, random_state=42),
+            "SVM": SVC(random_state=42),
         }
 
-        model = {
-            "user_id": user_id,
-            "name": name,
-            "description": description,
-            "type": type,
-            "target": target,
-            "file_location_class": class_file_name,
-            "file_location_reg": reg_file_name,
-            "columns": df.columns.tolist(),
-            "stats": stats,
+        # Feature selection using RFE
+        selector = RFECV(RandomForestClassifier(random_state=42), step=1, cv=5, scoring='accuracy')
+        X_train_selected = selector.fit_transform(X_train, y_train)
+        X_test_selected = selector.transform(X_test)
+
+        # Compare models
+        best_model = None
+        best_score = 0
+        best_model_name = None
+
+        for model_name, model in models.items():
+            model.fit(X_train_selected, y_train)
+            y_pred = model.predict(X_test_selected)
+            score = accuracy_score(y_test, y_pred)
+
+            print(f"{model_name} Accuracy: {score}")
+            if score > best_score:
+                best_score = score
+                best_model = model
+                best_model_name = model_name
+
+        # Evaluate best model
+        y_pred = best_model.predict(X_test_selected)
+        accuracy = accuracy_score(y_test, y_pred)
+        f1 = f1_score(y_test, y_pred)
+
+        print(f"Best Model: {best_model_name}")
+        print(f"Classification Accuracy: {accuracy}")
+        print(f"F1 Score: {f1}")
+
+        # Save model
+        file_path = f"models/{user_id}_class_{name}.joblib"
+        dump(best_model, file_path)
+
+        stats = {"accuracy": accuracy, "f1_score": f1}
+
+    elif type == "regression":
+        print("Optimizing Regression Model...")
+        
+        # Initialize models to compare
+        models = {
+            "RandomForestRegressor": RandomForestRegressor(random_state=42),
+            "GradientBoosting": GradientBoostingRegressor(random_state=42),
         }
 
-        return model
+        # Feature selection using RFE
+        selector = RFECV(GradientBoostingRegressor(random_state=42), step=1, cv=5, scoring='neg_mean_squared_error')
+        X_train_selected = selector.fit_transform(X_train, y_train)
+        X_test_selected = selector.transform(X_test)
 
-    if type == "regression":
-        target_home = f"home_{target}"
-        target_away = f"away_{target}"
+        # Compare models
+        best_model = None
+        best_score = float('inf')
+        best_model_name = None
 
-        print("Creating Regression Model")
+        for model_name, model in models.items():
+            model.fit(X_train_selected, y_train)
+            y_pred = model.predict(X_test_selected)
+            score = mean_squared_error(y_test, y_pred)
 
-        # Gradient Boost
-        df = df.dropna()
+            print(f"{model_name} MSE: {score}")
+            if score < best_score:
+                best_score = score
+                best_model = model
+                best_model_name = model_name
 
-        X_regression = df.drop([target_home, target_away], axis=1)
-        y_regression = df[
-            [target_home, target_away]
-        ] 
+        # Evaluate best model
+        y_pred = best_model.predict(X_test_selected)
+        mse = mean_squared_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
 
+        print(f"Best Model: {best_model_name}")
+        print(f"Mean Squared Error: {mse}")
+        print(f"R² Score: {r2}")
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X_regression, y_regression, test_size=0.2, random_state=42
-        )
+        # Save model
+        file_path = f"models/{user_id}_reg_{name}.joblib"
+        dump(best_model, file_path)
 
-        regression_model_home = GradientBoostingRegressor(n_estimators=100)
-        regression_model_away = GradientBoostingRegressor(n_estimators=100)
+        stats = {"mse": mse, "r2_score": r2}
 
-        regression_model_home.fit(X_train, y_train[target_home])
-        regression_model_away.fit(X_train, y_train[target_away])
+    else:
+        raise ValueError("Invalid model type. Choose 'classification' or 'regression'.")
 
-        y_pred_home = regression_model_home.predict(X_test)
-        y_pred_away = regression_model_away.predict(X_test)
+    return {
+        "user_id": user_id,
+        "name": name,
+        "model_type": type,
+        "file_path": file_path,
+        "stats": stats,
+    }
 
-
-        mse_home = mean_squared_error(y_test[target_home], y_pred_home)
-        mse_away = mean_squared_error(y_test[target_away], y_pred_away)
-
-        print("mse_home:", mse_home)
-
-        reg_file_name_home = f"models/{user_id}_gradient_reg_home_{name}.joblib"
-        reg_file_name_away = f"models/{user_id}_gradient_reg_away_{name}.joblib"
-
-        dump(regression_model_home, filename=reg_file_name_home)
-        dump(regression_model_away, filename=reg_file_name_away)
-
-        classification_accuracy = None
-        class_file_name = None
-
-        stats = {
-            "classification_accuracy": classification_accuracy,
-            "mse_home": mse_home,
-            "mse_away": mse_away,
-        }
-
-        model = {
-            "user_id": user_id,
-            "name": name,
-            "description": description,
-            "type": type,
-            "target": target,
-            "file_location_class": class_file_name,
-            "file_location_reg": reg_file_name_home,
-            "columns": df.columns.tolist(),
-            "stats": stats,
-        }
-
-        return model
-    
 
 def model_columns():
     return [
-        'away_completionpercentage', 'away_defensivetds', 'away_firstdowns', 'away_fourthdowneff', 
-        'away_fumbleslost', 'away_fumblesrecovered', 'away_interceptions', 'away_interceptiontds', 
-        'away_interceptionyards', 'away_kickingpoints', 'away_kickreturns', 'away_kickreturntds', 
-        'away_kickreturnyards', 'away_netpassingyards', 'away_passesdeflected', 'away_passesintercepted', 
-        'away_passingtds', 'away_points', 'away_possessiontime', 'away_puntreturns', 'away_puntreturntds', 
-        'away_puntreturnyards', 'away_qbhurries', 'away_rushingattempts', 'away_rushingtds', 'away_rushingyards', 
-        'away_sacks', 'away_tackles', 'away_tacklesforloss', 'away_talent', 'away_thirddowneff', 
-        'away_totalfumbles', 'away_totalpenaltiesyards', 'away_totalyards', 'away_turnovers', 'away_yardsperpass', 
-        'away_yardsperrushattempt', 'home_completionpercentage', 'home_defensivetds', 'home_firstdowns', 
-        'home_fourthdowneff', 'home_fumbleslost', 'home_fumblesrecovered', 'home_interceptions', 
-        'home_interceptiontds', 'home_interceptionyards', 'home_kickingpoints', 'home_kickreturns', 
-        'home_kickreturntds', 'home_kickreturnyards', 'home_netpassingyards', 'home_passesdeflected', 
-        'home_passesintercepted', 'home_passingtds', 'home_points', 'home_possessiontime', 'home_puntreturns', 
-        'home_puntreturntds', 'home_puntreturnyards', 'home_qbhurries', 'home_rushingattempts', 'home_rushingtds', 
-        'home_rushingyards', 'home_sacks', 'home_tackles', 'home_tacklesforloss', 'home_talent', 
-        'home_thirddowneff', 'home_totalfumbles', 'home_totalpenaltiesyards', 'home_totalyards', 
-        'home_turnovers', 'home_yardsperpass', 'home_yardsperrushattempt', 'target'
+        'away_completionpercentage', 'home_completionpercentage',
+        'away_defensivetds', 'home_defensivetds',
+        'away_firstdowns', 'home_firstdowns',
+        'away_fourthdowneff', 'home_fourthdowneff',
+        'away_fumbleslost', 'home_fumbleslost',
+        'away_fumblesrecovered', 'home_fumblesrecovered',
+        'away_interceptions', 'home_interceptions',
+        'away_interceptiontds', 'home_interceptiontds',
+        'away_interceptionyards', 'home_interceptionyards',
+        'away_kickingpoints', 'home_kickingpoints',
+        'away_kickreturns', 'home_kickreturns',
+        'away_kickreturntds', 'home_kickreturntds',
+        'away_kickreturnyards', 'home_kickreturnyards',
+        'away_netpassingyards', 'home_netpassingyards',
+        'away_passesdeflected', 'home_passesdeflected',
+        'away_passesintercepted', 'home_passesintercepted',
+        'away_passingtds', 'home_passingtds',
+        # 'away_points', 'home_points',
+        'away_possessiontime', 'home_possessiontime',
+        'away_puntreturns', 'home_puntreturns',
+        'away_puntreturntds', 'home_puntreturntds',
+        'away_puntreturnyards', 'home_puntreturnyards',
+        'away_qbhurries', 'home_qbhurries',
+        'away_rushingattempts', 'home_rushingattempts',
+        'away_rushingtds', 'home_rushingtds',
+        'away_rushingyards', 'home_rushingyards',
+        'away_sacks', 'home_sacks',
+        'away_tackles', 'home_tackles',
+        'away_tacklesforloss', 'home_tacklesforloss',
+        'away_talent', 'home_talent',
+        'away_thirddowneff', 'home_thirddowneff',
+        'away_totalfumbles', 'home_totalfumbles',
+        'away_totalpenaltiesyards', 'home_totalpenaltiesyards',
+        'away_totalyards', 'home_totalyards',
+        'away_turnovers', 'home_turnovers',
+        'away_yardsperpass', 'home_yardsperpass',
+        'away_yardsperrushattempt', 'home_yardsperrushattempt',
+        'target'
     ]
 
 
 
-from database.database_commands import create_connection
+
+from cfb.database.database_commands import create_connection
  
 connection = create_connection()
 
 model_loader(connection=connection, given_columns=model_columns(), user_id=34, name="Test1", type='classification', target='target', description=None)
 
 connection.close()
+
+
+
 '''
-
-
-
 import cfbd
 from cfbd.rest import ApiException
 from pprint import pprint
@@ -321,10 +321,8 @@ from cfb.database.database_commands import (
 )
 from global_vars import Global
 
-'''
-Run weekly before games
-'''
-def get_betting_lines(connection, year, week):
+# Run weekly before games
+def get_betting_lines(connection, year, week, season_type):
     # Configure API key authorization
     configuration = cfbd_configuration()
 
@@ -337,9 +335,9 @@ def get_betting_lines(connection, year, week):
         create_betting_lines_table(connection)
 
         # For each team get all data
-        api_response = api_instance.get_lines(year=year, week=week)
-
-        # TODO:: Sometimes hometeam is different in games table and betting_lines table
+        api_response = api_instance.get_lines(year=year, week=week, season_type=season_type)
+        pprint(api_response)
+        print(len(api_response))
 
         insert_betting_lines_data(connection, api_response)
 
@@ -347,31 +345,7 @@ def get_betting_lines(connection, year, week):
         print("Exception when calling BettingApi->get_lines: %s\n" % e)
 
 
-'''
-Run weekly after games
-'''
-def get_game_stats(connection, year, week):
-    # Configure API key authorization: ApiKeyAuth
-    configuration = cfbd_configuration()
-
-    # create an instance of the API class
-    games_api = cfbd.GamesApi(cfbd.ApiClient(configuration))
-
-    try:
-        # Create the "games" table
-        create_game_stats_table(connection)
-
-        api_response = games_api.get_team_game_stats(
-            year=year, week=week
-        )
-
-        insert_game_stats_data(connection, api_response, year)
-
-    except ApiException as e:
-        print("Exception when calling teams_api->get_fbs_teams: %s\n" % e)
-
-
-def get_games(connection, year):
+def get_games(connection, year, season_type):
 
     # Configure API key authorization
     configuration = cfbd_configuration()
@@ -384,9 +358,7 @@ def get_games(connection, year):
         create_games_table(connection)
 
         # Get games data from the API
-        api_response = games_api.get_games(year=year, season_type='postseason')
-
-        pprint(api_response)
+        api_response = games_api.get_games(year=year, season_type=season_type)
 
         # Insert data into the "games" table
         insert_games_data(connection, api_response)
@@ -395,31 +367,37 @@ def get_games(connection, year):
         print("Exception when calling teams_api->get_teams: %s\n" % e)
 
 
-def get_team_overall_stats(connection, year):
-    
-     # Configure API key authorization
+# Run weekly after games
+def get_game_stats(connection, year, week, season_type):
+
     configuration = cfbd_configuration()
 
-    # Create an instance of the API class
-    stats = cfbd.StatsApi(cfbd.ApiClient(configuration))
+    # create an instance of the API class
+    games_api = cfbd.GamesApi(cfbd.ApiClient(configuration))
 
     try:
-        # Advanced team metrics by season
-        api_response = stats.get_team_season_stats(year=year, team='Florida', start_week=1, end_week=10)
-        # api_response = api_instance.get_team_season_stats(year=year, team=team, conference=conference, start_week=start_week, end_week=end_week)
+        # Create the "games" table
+        create_game_stats_table(connection)
 
-        pprint(api_response)
+        api_response = games_api.get_team_game_stats(
+            year=year, week=1, season_type=season_type
+        )
+
+        insert_game_stats_data(connection, api_response, year)
+
+
     except ApiException as e:
-        print("Exception when calling StatsApi->get_advanced_team_season_stats: %s\n" % e)
+        print("Exception when calling GamesApi->get_team_game_stats: %s\n" % e)
+
 
 
 connection = create_connection()
 
-get_games(connection, Global.year)
-get_betting_lines(connection, Global.year, Global.week)
-get_game_stats(connection, Global.year, Global.week-1)
-
-# get_team_overall_stats(connection, Global.year)
-
+get_games(connection, Global.year, Global.season_type)
+get_betting_lines(connection, Global.year, Global.week, Global.season_type)
+get_game_stats(connection, Global.year, Global.week, Global.season_type)
 
 connection.close()
+
+
+'''

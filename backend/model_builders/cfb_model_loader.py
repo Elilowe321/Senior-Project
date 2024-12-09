@@ -240,30 +240,50 @@ def predict_games(
     week,
     type,
     target,
+    season_type,
     chosen_columns,
     class_file_path=None,
     reg_file_path=None,
 ):
     
-    # Needed ffor getting upcoming betting lines
+    # Needed for getting upcoming betting lines
     # get_betting_lines(connection, year, week)
 
-    # Get all games 
     cursor = connection.cursor()
-    cursor.execute(
-        f"""
-            SELECT id as game_id,
-                home_id,
-                home_team,
-                away_id,
-                away_team
-            FROM games
-            WHERE season = {year}
-            AND week = {week};
-        """
-    )
+    if(season_type == 'postseason'):
+        # Get postseason games 
+        cursor.execute(
+            f"""
+                SELECT id as game_id,
+                    home_id,
+                    home_team,
+                    away_id,
+                    away_team
+                FROM games
+                WHERE season = {year}
+                AND week = {week}
+                AND season_type = '{season_type}';
+            """
+        )
+    else:
+        # Get all games 
+        cursor.execute(
+            f"""
+                SELECT id as game_id,
+                    home_id,
+                    home_team,
+                    away_id,
+                    away_team
+                FROM games
+                WHERE season = {year}
+                AND week = {week}
+                --AND season_type = '{season_type}';
+            """
+        )
 
     rows = cursor.fetchall()
+
+    print(rows)
     connection.commit()
     cursor.close()
 

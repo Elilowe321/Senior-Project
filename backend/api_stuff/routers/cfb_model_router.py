@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from fastapi.security import OAuth2PasswordBearer
 from ..routers.auth_router import get_current_user
+from global_vars import Global
  
 from cfb.database.user_model_commands import (
     get_user_models,
@@ -276,6 +277,7 @@ def run_model_on_prev_year(user_id: int, model_id: int, year: int, safe_bet: int
                 week=week,
                 type=model.type,
                 target=model.target,
+                season_type=Global.season_type,
                 chosen_columns=model.columns,
                 class_file_path=class_filepath,
             )
