@@ -67,6 +67,17 @@ services:
       - my_network
     restart: "no"
 
+  # This is needed for just running backend stuff with database
+  ncaa-script-runner:
+    build: ./backend
+    command: sh -c "python ncaa_backend_testing.py"
+    env_file:
+      - .env
+    networks:
+      - my_network
+    restart: "no"
+
+
 
 networks:
   my_network:
