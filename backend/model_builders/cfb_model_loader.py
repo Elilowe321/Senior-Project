@@ -44,8 +44,6 @@ def model_loader(
 
     return model
 
-
-
 def target_provided(user_id, name, df, type, target, description=None):
 
     if type == "classification":
@@ -100,8 +98,6 @@ def target_provided(user_id, name, df, type, target, description=None):
             "target": target,
             "file_location_class": class_file_name,
             "file_location_reg": reg_file_name,
-            "mse_home": mse_home,
-            "mse_away": mse_away,
             "columns": df.columns.tolist(),
             "stats": stats
         }
@@ -170,6 +166,7 @@ def target_provided(user_id, name, df, type, target, description=None):
         }
 
         return model
+
 
 def predict_games(
     connection,

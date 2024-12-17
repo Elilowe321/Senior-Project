@@ -6,10 +6,11 @@ import os
 # Load environment vars from .env
 load_dotenv()
 
-
 def get_ncaa_teams(connection):
 
-    teams_url = f"https://api.sportradar.com/ncaamb/trial/v8/en/league/teams.json?api_key={os.getenv("API_KEY")}"
+    API_KEY = os.getenv("API_KEY")
+
+    teams_url = f"https://api.sportradar.com/ncaamb/trial/v8/en/league/teams.json?api_key={API_KEY}"
     headers = {"accept": "application/json"}
 
     try:
@@ -20,7 +21,7 @@ def get_ncaa_teams(connection):
         if team_response.status_code == 200:
             teams = team_response.json()
 
-            insert_ncaa_teams(teams)
+            insert_ncaa_teams(connection, teams)
 
         else:
             print(f"Failed to fetch teams: HTTP {team_response.status_code} - {team_response.text}")
@@ -36,7 +37,7 @@ def create_ncaa_teams_table(connection):
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS ncaa_teams (
-                id INT PRIMARY KEY,
+                id VARCHAR(100) PRIMARY KEY,
                 school VARCHAR(100),
                 alias VARCHAR(30),
                 mascot VARCHAR(50)
@@ -60,13 +61,13 @@ def insert_ncaa_teams(connection, data):
             cursor.execute(
                 """
                 INSERT INTO ncaa_teams (id, school, alias, mascot)
-                VALUES (%s, %s, %s, %s,)
+                VALUES (%s, %s, %s, %s)
             """,
                 (
-                    team.id,
-                    team.market,
-                    team.alias,
-                    team.name
+                    team['id'],
+                    team['market'],
+                    team['alias'],
+                    team['name'],
                 ),
             )
         connection.commit()
@@ -77,5 +78,4 @@ def insert_ncaa_teams(connection, data):
         connection.rollback()
 
         print("Error inserting data into PostgreSQL NCAA teams:", e)
-
 
