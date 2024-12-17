@@ -11,7 +11,9 @@ from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from joblib import dump
 
 
-
+'''
+~ Takes the columns choosen by a user, puts them into a dataframe, and send to the model creation function
+'''
 def model_loader(
     connection, given_columns, user_id, name, type, target, description=None
 ):
@@ -23,20 +25,15 @@ def model_loader(
     df = pd.DataFrame(rows, columns=given_columns)
     df = df.sort_index(axis=1)
 
-    # Call different models to compare which is the best
-    model = target_provided(
-        user_id=user_id,
-        name=name,
-        df=df,
-        type=type,
-        target=target,
-        description=description,
-    )
+    # Called model creator
+    model = default_classification_model(df)
 
     return model
 
-
-# Returns the stats for given columns
+'''
+~ Gets all stats from team_game_stats in database
+~ Adds target (win/loss), and team talent to it
+'''
 def get_column_stats(connection, columns):
     try:
         # Need to remove for select query
@@ -134,122 +131,13 @@ def get_column_stats(connection, columns):
         print(f"Error executing SQL query: {e}")
         return None
 
-
-
-def target_provided(user_id, name, df, type, target, description=None):
-    """Automatically optimize and train the best model with feature selection."""
-    df = df.dropna()
-    X = df.drop(columns=[target])
-    y = df[target]
-
-    # Split data
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    if type == "classification":
-        print("Optimizing Classification Model...")
-        
-        # Initialize models to compare
-        models = {
-            "RandomForest": RandomForestClassifier(random_state=42),
-            "LogisticRegression": LogisticRegression(max_iter=1000, random_state=42),
-            "SVM": SVC(random_state=42),
-        }
-
-        # Feature selection using RFE
-        selector = RFECV(RandomForestClassifier(random_state=42), step=1, cv=5, scoring='accuracy')
-        X_train_selected = selector.fit_transform(X_train, y_train)
-        X_test_selected = selector.transform(X_test)
-
-        # Compare models
-        best_model = None
-        best_score = 0
-        best_model_name = None
-
-        for model_name, model in models.items():
-            model.fit(X_train_selected, y_train)
-            y_pred = model.predict(X_test_selected)
-            score = accuracy_score(y_test, y_pred)
-
-            print(f"{model_name} Accuracy: {score}")
-            if score > best_score:
-                best_score = score
-                best_model = model
-                best_model_name = model_name
-
-        # Evaluate best model
-        y_pred = best_model.predict(X_test_selected)
-        accuracy = accuracy_score(y_test, y_pred)
-        f1 = f1_score(y_test, y_pred)
-
-        print(f"Best Model: {best_model_name}")
-        print(f"Classification Accuracy: {accuracy}")
-        print(f"F1 Score: {f1}")
-
-        # Save model
-        file_path = f"models/{user_id}_class_{name}.joblib"
-        dump(best_model, file_path)
-
-        stats = {"accuracy": accuracy, "f1_score": f1}
-
-    elif type == "regression":
-        print("Optimizing Regression Model...")
-        
-        # Initialize models to compare
-        models = {
-            "RandomForestRegressor": RandomForestRegressor(random_state=42),
-            "GradientBoosting": GradientBoostingRegressor(random_state=42),
-        }
-
-        # Feature selection using RFE
-        selector = RFECV(GradientBoostingRegressor(random_state=42), step=1, cv=5, scoring='neg_mean_squared_error')
-        X_train_selected = selector.fit_transform(X_train, y_train)
-        X_test_selected = selector.transform(X_test)
-
-        # Compare models
-        best_model = None
-        best_score = float('inf')
-        best_model_name = None
-
-        for model_name, model in models.items():
-            model.fit(X_train_selected, y_train)
-            y_pred = model.predict(X_test_selected)
-            score = mean_squared_error(y_test, y_pred)
-
-            print(f"{model_name} MSE: {score}")
-            if score < best_score:
-                best_score = score
-                best_model = model
-                best_model_name = model_name
-
-        # Evaluate best model
-        y_pred = best_model.predict(X_test_selected)
-        mse = mean_squared_error(y_test, y_pred)
-        r2 = r2_score(y_test, y_pred)
-
-        print(f"Best Model: {best_model_name}")
-        print(f"Mean Squared Error: {mse}")
-        print(f"R² Score: {r2}")
-
-        # Save model
-        file_path = f"models/{user_id}_reg_{name}.joblib"
-        dump(best_model, file_path)
-
-        stats = {"mse": mse, "r2_score": r2}
-
-    else:
-        raise ValueError("Invalid model type. Choose 'classification' or 'regression'.")
-
-    return {
-        "user_id": user_id,
-        "name": name,
-        "model_type": type,
-        "file_path": file_path,
-        "stats": stats,
-    }
-
-
+'''
+~ List of available columns for a user to choose from.
+~ I think target is needed if doing classification model
+'''
 def model_columns():
     return [
+        'away_points', 'home_points',
         'away_completionpercentage', 'home_completionpercentage',
         'away_defensivetds', 'home_defensivetds',
         'away_firstdowns', 'home_firstdowns',
@@ -267,7 +155,6 @@ def model_columns():
         'away_passesdeflected', 'home_passesdeflected',
         'away_passesintercepted', 'home_passesintercepted',
         'away_passingtds', 'home_passingtds',
-        # 'away_points', 'home_points',
         'away_possessiontime', 'home_possessiontime',
         'away_puntreturns', 'home_puntreturns',
         'away_puntreturntds', 'home_puntreturntds',
@@ -291,14 +178,29 @@ def model_columns():
     ]
 
 
+'''
+~ Takes the datafram given and returns a model
+~ If no columns have been changed, the dataframe will have every stat.
+~ Work your magic (return any stats you think are important or anything at all)
+~ If you would like to see previous model go to /model_builders .. target_provided
+'''
+def default_classification_model(df):
+    print("HERE YA GO")
+
+'''
+~ Main working space. 
+~ Model_loader will call everything else
+'''
 
 
-from cfb.database.database_commands import create_connection
- 
+# Create DB connection
+from cfb.database.database_commands import create_connection 
 connection = create_connection()
 
+# First thing called when creating a model
 model_loader(connection=connection, given_columns=model_columns(), user_id=34, name="Test1", type='classification', target='target', description=None)
 
+# Close connection
 connection.close()
 
 

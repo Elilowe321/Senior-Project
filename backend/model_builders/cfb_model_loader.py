@@ -83,7 +83,8 @@ def target_provided(user_id, name, df, type, target, description=None):
         reg_file_name = None
 
         # Return Model
-        df = df.drop([target], axis=1)
+        # df = df.drop([target], axis=1)
+
         stats = {
             "classification_accuracy": round(classification_accuracy, 2),
             "mse_home": mse_home,
