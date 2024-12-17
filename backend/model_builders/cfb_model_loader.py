@@ -3,14 +3,13 @@ import numpy as np
 from joblib import load, dump
 from collections import OrderedDict
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import (
-    accuracy_score,
-    mean_squared_error,
-)
-from sklearn.ensemble import (
-    RandomForestClassifier,
-    GradientBoostingRegressor,
-)
+from sklearn.feature_selection import RFECV
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingRegressor, RandomForestRegressor
+from sklearn.metrics import accuracy_score, mean_squared_error, f1_score, r2_score
+
+
 
 from cfb.database.database_commands import (
     create_connection,
@@ -86,7 +85,7 @@ def target_provided(user_id, name, df, type, target, description=None):
         reg_file_name = None
 
         # Return Model
-        # df = df.drop([target], axis=1)
+        df = df.drop([target], axis=1)
         stats = {
             "classification_accuracy": round(classification_accuracy, 2),
             "mse_home": mse_home,
@@ -101,8 +100,10 @@ def target_provided(user_id, name, df, type, target, description=None):
             "target": target,
             "file_location_class": class_file_name,
             "file_location_reg": reg_file_name,
+            "mse_home": mse_home,
+            "mse_away": mse_away,
             "columns": df.columns.tolist(),
-            "stats": stats,
+            "stats": stats
         }
 
         return model
@@ -169,70 +170,6 @@ def target_provided(user_id, name, df, type, target, description=None):
         }
 
         return model
-
-        '''
-        # THIS IS THE WORKING ONE FOR RANDOM FOREST
-        
-        # Drop na columns if > 200 and other rows
-        # df = df.dropna(thresh=len(df) - 500, axis=1)
-        df = df.dropna()
-
-        x_model_name = df.drop([target_home, target_away], axis=1)
-        y_model_name = df[[target_home, target_away]]
-
-        X_train, X_test, y_train, y_test = train_test_split(
-            x_model_name, y_model_name, test_size=0.2, random_state=42
-        )
-
-        # Create models
-        regression_model = RandomForestRegressor(n_estimators=100)
-
-        # Fit models
-        regression_model.fit(X_train, y_train)
-
-        # Model Evaluation
-        y_pred = regression_model.predict(X_test)
-
-        y_pred_home = y_pred[:, 0]
-        y_pred_away = y_pred[:, 1]
-
-        # Check Accuracy
-        mse_home = mean_squared_error(y_test[target_home], y_pred_home)
-        mse_away = mean_squared_error(y_test[target_away], y_pred_away)
-
-        print("MSE Home: ", mse_home)
-        print("MSE Away: ", mse_away)
-
-        # Save models
-        reg_file_name = f"models/{user_id}_reg_{name}.joblib"
-
-        dump(regression_model, filename=reg_file_name)
-
-        classification_accuracy = None
-        class_file_name = None
-
-        # Return Model
-        # df = df.drop([target_home, target_away], axis=1)
-        stats = {
-            "classification_accuracy": classification_accuracy,
-            "mse_home": mse_home,
-            "mse_away": mse_away,
-        }
-
-        model = {
-            "user_id": user_id,
-            "name": name,
-            "description": description,
-            "type": type,
-            "target": target,
-            "file_location_class": class_file_name,
-            "file_location_reg": reg_file_name,
-            "columns": df.columns.tolist(),
-            "stats": stats,
-        }
-
-        return model
-        '''
 
 def predict_games(
     connection,
@@ -445,45 +382,3 @@ def predict_games(
 
     return all_predictions
 
-
-
-    '''
-    # This is working for Random forest
-    print("Making Regression Predictions")
-    random_forest_model = load(filename=reg_file_path)
-
-    for row in rows:
-        game_id, home_id, home_team, away_id, away_team = row
-
-        home_average_stats = get_team_average_stats_new(
-            connection, chosen_columns, home_id, 2023, "home_"
-        )
-        away_average_stats = get_team_average_stats_new(
-            connection, chosen_columns, away_id, 2023, "away_"
-        )
-
-        merged_stats = home_average_stats.copy()
-        merged_stats.update(away_average_stats)
-
-        # Create a DataFrame from merged_stats, drop targets, and sort
-        df = pd.DataFrame([merged_stats.values()], columns=merged_stats.keys())
-        drop_targets = [f"home_{target}", f"away_{target}"]
-        df = df.drop(columns=drop_targets)
-        df = df.sort_index(axis=1)
-
-        random_forest = random_forest_model.predict(df)
-        random_forest_home = random_forest[0][0]
-        random_forest_away = random_forest[0][1]
-
-        all_predictions[game_id] = OrderedDict(
-            {
-                "game_id": game_id,
-                "home_team": home_team,
-                "away_team": away_team,
-                "random_forest_home": float(round(random_forest_home, 2)),
-                "random_forest_away": float(round(random_forest_away, 2)),
-            }
-        )
-
-return all_predictions
-'''

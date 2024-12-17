@@ -138,21 +138,20 @@ def create_user_model_handler(
 ) -> cfb_models.ReturnModel:
     
     cursor = connection.cursor()
-    cursor.execute(
-        f"""
-        SELECT 1 
-        FROM user_models 
-        WHERE user_id = {user_model.user_id} 
-        AND name = '{user_model.name}'
-        """
-    )
-
-    existing_model = cursor.fetchone()
-
-    if existing_model:
-        raise HTTPException(status_code=404, detail="Name already in use")
-
     try:
+        # Check if the model name already exists for the user
+        cursor.execute(
+            """
+            SELECT 1 
+            FROM user_models 
+            WHERE user_id = %s AND name = %s
+            """, (user_model.user_id, user_model.name)
+        )
+        existing_model = cursor.fetchone()
+
+        if existing_model:
+            raise HTTPException(status_code=400, detail="Model name already in use")
+
         # Call the function to create a user model
         created_model = create_user_model(
             connection,
@@ -167,11 +166,17 @@ def create_user_model_handler(
             user_model.description,
         )
 
-        # Return the model
+        print(created_model)
+
+        # Return the model, ensuring it conforms to the expected schema
         return cfb_models.ReturnModel.model_validate(created_model)
 
-    except:
-        return "Failed creating user model"
+    except Exception as e:
+        # Log the error for debugging purposes
+        print(f"Error creating user model: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to create user model due to an internal error"
+        )
 
 
 

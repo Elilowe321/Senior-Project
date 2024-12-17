@@ -45,22 +45,22 @@ def insert_user_model(connection, model_data):
 
         cursor.execute(
             """
-        INSERT INTO user_models (user_id, name, description, type, target, file_location_class, file_location_reg, classification_accuracy, mse_home, mse_away, columns)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """,
-            (
-                model_data["user_id"],
-                model_data["name"],
-                model_data["description"],
-                model_data["type"],
-                model_data["target"],
-                model_data["file_location_class"],
-                model_data["file_location_reg"],
-                model_data["stats"]["classification_accuracy"],
-                model_data["stats"]["mse_home"],
-                model_data["stats"]["mse_away"],
-                model_data["columns"],
-            ),
+            INSERT INTO user_models (user_id, name, description, type, target, file_location_class, file_location_reg, classification_accuracy, mse_home, mse_away, columns)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+                (
+                    model_data["user_id"],
+                    model_data["name"],
+                    model_data["description"],
+                    model_data["type"],
+                    model_data["target"],
+                    model_data["file_location_class"],
+                    model_data["file_location_reg"],
+                    model_data["stats"]["classification_accuracy"],
+                    model_data["stats"]["mse_home"],
+                    model_data["stats"]["mse_away"],
+                    model_data["columns"],
+                ),
         )
 
         connection.commit()
@@ -157,6 +157,9 @@ def create_user_model(
         model = model_loader(
             connection, model_columns, user_id, name, type, target, description
         )
+
+        # print(model)
+
 
         # Insert into database
         insert_user_model(connection, model)
