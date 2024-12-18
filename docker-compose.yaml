@@ -65,6 +65,8 @@ services:
       - .env
     networks:
       - my_network
+    volumes:
+      - ./backend/backend_testing.py:/app/backend_testing.py
     restart: "no"
 
   # This is needed for just running backend stuff with database
