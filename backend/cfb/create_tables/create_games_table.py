@@ -1,7 +1,7 @@
 from __future__ import print_function
 import cfbd
 from cfbd.rest import ApiException
-from database.database_commands import (
+from cfb.database.database_commands import (
     cfbd_configuration,
     create_connection,
     create_games_table,
@@ -17,7 +17,7 @@ for year in range(2001, 2024): # TODO:: Not needed anymore
 """
 
 
-def get_games(connection, year):
+def get_games(connection, year, season_type):
 
     # Configure API key authorization
     configuration = cfbd_configuration()
@@ -30,7 +30,7 @@ def get_games(connection, year):
         create_games_table(connection)
 
         # Get games data from the API
-        api_response = games_api.get_games(year=year)
+        api_response = games_api.get_games(year=year, season_type=season_type)
 
         # Insert data into the "games" table
         insert_games_data(connection, api_response)
